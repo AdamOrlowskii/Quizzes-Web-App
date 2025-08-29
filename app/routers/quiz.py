@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Response, status, HTTPException, Depends, APIRouter
+from fastapi import FastAPI, Form, Response, status, HTTPException, Depends, APIRouter, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List, Optional
+from typing import List, Optional, Annotated
 from .. import models, schemas, oauth2
 from ..database import get_db
 
@@ -20,9 +20,16 @@ def get_quizzes(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, s
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Quiz)
-def create_quizzes(quiz: schemas.QuizCreate, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
+async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user), published: bool = True):
 
-    new_quiz = models.Quiz(owner_id=current_user.id, **quiz.model_dump())
+    if not file.filename.endswith('.txt'):
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Wrong file format. Only accepts .txt")
+    if not file.size > 1:
+        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="File is empty")
+    
+    content = await file.read()
+    text_content = content.decode('utf-8')
+    new_quiz = models.Quiz(title=title, content=text_content, owner_id=current_user.id, published=published)
     db.add(new_quiz)
     db.commit()
     db.refresh(new_quiz)
