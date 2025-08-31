@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     secret_key: str
     algorithm: str
     access_token_expire_minutes: int
+    max_number_of_sentences_in_one_chunk: int
 
     class Config:
         env_file = ".env"

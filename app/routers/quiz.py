@@ -2,8 +2,12 @@ from fastapi import FastAPI, Form, Response, status, HTTPException, Depends, API
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional, Annotated
-from .. import models, schemas, oauth2
+from .. import models, schemas, oauth2, utils
 from ..database import get_db
+import re
+from ..config import settings
+
+MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_chunk
 
 router = APIRouter(
     prefix="/quizzes",
@@ -33,6 +37,9 @@ async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = De
     db.add(new_quiz)
     db.commit()
     db.refresh(new_quiz)
+
+    text_in_chunks = utils.split_text(text_content, MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK)
+    #print(text_in_chunks)
 
     return new_quiz
 
