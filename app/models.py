@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 from .database import Base
@@ -16,6 +16,7 @@ class Quiz(Base):
     owner_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     owner = relationship("User")
+    questions = relationship("Question", back_populates="quiz")
 
 
 class User(Base):
@@ -32,3 +33,14 @@ class Vote(Base):
     
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), primary_key=True)
+
+
+class Question(Base):
+    __tablename__ = 'questions'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
+    question_text = Column(String, nullable=False)
+    answers = Column(JSON, nullable=False)
+
+    quiz = relationship("Quiz", back_populates="questions")

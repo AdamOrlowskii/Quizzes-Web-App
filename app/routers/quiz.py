@@ -26,13 +26,21 @@ def get_quizzes(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, s
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Quiz)
 async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user), published: bool = True):
 
-    if not file.filename.endswith('.txt'):
+
+    if file.filename.endswith('.txt'):
+        content = await file.read()
+        text_content = content.decode('utf-8')
+
+    elif file.filename.endswith('.pdf'):
+        pass
+
+    else:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Wrong file format. Only accepts .txt")
+    
     if not file.size > 1:
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="File is empty")
     
-    content = await file.read()
-    text_content = content.decode('utf-8')
+
     new_quiz = models.Quiz(title=title, content=text_content, owner_id=current_user.id, published=published)
     db.add(new_quiz)
     db.commit()
