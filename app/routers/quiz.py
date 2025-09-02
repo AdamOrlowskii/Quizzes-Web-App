@@ -6,6 +6,7 @@ from .. import models, schemas, oauth2, utils
 from ..database import get_db
 import re
 from ..config import settings
+from ..pdf_parser import PDFParser
 
 MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_chunk
 
@@ -26,19 +27,22 @@ def get_quizzes(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, s
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Quiz)
 async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user), published: bool = True):
 
+    content = await file.read()
 
     if file.filename.endswith('.txt'):
-        content = await file.read()
         text_content = content.decode('utf-8')
-
     elif file.filename.endswith('.pdf'):
-        pass
+        parser = PDFParser(content)
+        text_content = parser.parse()
+
+        if not text_content or len(text_content) < 10:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Could not extract text from PDF. Try a different file")
 
     else:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="Wrong file format. Only accepts .txt")
+        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Only .txt and .pdf files are supported")
     
     if not file.size > 1:
-        raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail="File is empty")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="File is empty")
     
 
     new_quiz = models.Quiz(title=title, content=text_content, owner_id=current_user.id, published=published)
