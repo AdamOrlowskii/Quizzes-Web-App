@@ -32,7 +32,7 @@ async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = De
     if file.filename.endswith('.txt'):
         text_content = content.decode('utf-8')
     elif file.filename.endswith('.pdf'):
-        parser = PDFParser(content)
+        parser = PDFParser(content, debug=True)
         text_content = parser.parse()
 
         if not text_content or len(text_content) < 10:

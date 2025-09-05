@@ -1,15 +1,18 @@
 import re
 import zlib
 from typing import List, Optional
+import base64
+
 
 class PDFParser:
     
-    def __init__(self, pdf_bytes: bytes):
+    def __init__(self, pdf_bytes: bytes, debug):
         self.pdf_bytes = pdf_bytes
         self.objects = {}
         self.xref_table = {}
+        self.debug = debug
 
-    
+
     def parse(self) -> str:
 
         self._parse_xref_table()
@@ -143,33 +146,54 @@ class PDFParser:
         self.objects[obj_num] = obj_content
 
         return obj_content
+        
+
+    def _decode_ascii85(self, data: bytes) -> bytes:
+
+        data = data.replace(b'\n', b'').replace(b'\r', b'').replace(b' ', b'')
+
+        if data.endswith(b'~>'):
+            data = data[:-2]
+
+        try:
+            return base64.a85decode(data)
+        except:
+            return data
+
     
     def _extract_stream_from_object(self, obj_content: bytes) -> Optional[bytes]:
-
-        stream_match = re.search(rb'stream\r?\n?(.*?)enstream', obj_content, re.DOTALL)
-        if not stream_match:
+        """Extract and decompress stream from an object"""
+        # Find stream boundaries
+        stream_start = obj_content.find(b'stream')
+        stream_end = obj_content.find(b'endstream')
+        
+        if stream_start == -1 or stream_end == -1:
             return None
         
-        stream_data = stream_match.group(1)
-
-        if b'/FlateDecode' in obj_content or b'/FL' in obj_content:
-
-            try:
-                stream_data = zlib.decompress(stream_data)
-
-            except Exception as e:
-
-                try:
-                    stream_data = zlib.decompress(stream_data, -15)
-
-                except:
-                    pass
+        # Move past 'stream' and any newlines
+        stream_start += 6  # len('stream')
+        if stream_start < len(obj_content) and obj_content[stream_start:stream_start+2] in (b'\r\n', b'\n\r'):
+            stream_start += 2
+        elif stream_start < len(obj_content) and obj_content[stream_start:stream_start+1] in (b'\n', b'\r'):
+            stream_start += 1
         
-        if b'/ASCIIHexDecode' in obj_content:
-            stream_data = self._decode_ascii_hex(stream_data)
+        stream_data = obj_content[stream_start:stream_end]
+        
+        # IMPORTANT: Apply decompression in the right order!
+        # Check for ASCII85 first
+        if b'/ASCII85Decode' in obj_content:
+            if stream_data.endswith(b'~>'):
+                stream_data = stream_data[:-2]
+            import base64
+            stream_data = base64.a85decode(stream_data)
+        
+        # Then apply FlateDecode
+        if b'/FlateDecode' in obj_content:
+            import zlib
+            stream_data = zlib.decompress(stream_data)
+        
+        return stream_data  # Return the DECOMPRESSED data
 
-        return stream_data
-    
 
     def _decode_ascii_hex(self, data: bytes) -> bytes:
 
@@ -186,18 +210,19 @@ class PDFParser:
 
 
     def _extract_text_from_stream(self, stream: bytes) -> str:
-
         extracted_text = []
         
         # Pattern 1: Literal strings (text) Tj
-        literal_pattern = rb'\(((?:[^()\\]|\\[()\\])*)\)\s*Tj'
-        for match in re.finditer(literal_pattern, stream):
+        literal_pattern = rb'\(([^)]*)\)\s*Tj'
+        
+        matches = list(re.finditer(literal_pattern, stream))
+        
+        for match in matches:
             text_bytes = match.group(1)
-            # Decode and clean
             text = text_bytes.decode('utf-8', errors='ignore')
-            # Remove any null bytes from the decoded text
             text = text.replace('\x00', '')
             text = text.replace('\\(', '(').replace('\\)', ')').replace('\\\\', '\\')
+            
             if text.strip():
                 extracted_text.append(text)
         
@@ -211,7 +236,6 @@ class PDFParser:
                     hex_str = hex_str[:-1]
                 text_bytes = bytes.fromhex(hex_str)
                 text = self._decode_pdf_text(text_bytes)
-                # Remove null bytes
                 text = text.replace('\x00', '')
                 if text and text.strip():
                     extracted_text.append(text)
@@ -223,8 +247,7 @@ class PDFParser:
         for match in re.finditer(array_pattern, stream, re.DOTALL):
             array_content = match.group(1)
             
-            # Extract literal strings from array
-            str_pattern = rb'\(((?:[^()\\]|\\[()\\])*)\)'
+            str_pattern = rb'\(([^)]*)\)'
             for str_match in re.finditer(str_pattern, array_content):
                 text = str_match.group(1).decode('utf-8', errors='ignore')
                 text = text.replace('\x00', '')
@@ -232,7 +255,6 @@ class PDFParser:
                 if text.strip():
                     extracted_text.append(text)
             
-            # Extract hex strings from array
             hex_in_array = rb'<([0-9A-Fa-f]+)>'
             for hex_match in re.finditer(hex_in_array, array_content):
                 try:
@@ -246,10 +268,9 @@ class PDFParser:
                         extracted_text.append(text)
                 except:
                     pass
-    
+
         # Pattern 4: Binary text (UTF-16)
         self._extract_binary_text(stream, extracted_text)
-        
         return ' '.join(extracted_text)
 
 
