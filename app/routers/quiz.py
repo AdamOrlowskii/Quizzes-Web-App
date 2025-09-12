@@ -33,17 +33,20 @@ async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = De
         text_content = content.decode('utf-8')
     elif file.filename.endswith('.pdf'):
         parser = PDFParser(content, debug=True)
+        analysis = parser.analyze_pdf()
+        print(f"PDF type: {analysis['type']}, has ToUnicode: {analysis['has_tounicode']}")
         text_content = parser.parse()
 
-        if not text_content or len(text_content) < 10:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Could not extract text from PDF. Try a different file")
+        if text_content:
+            print(f"Succesfully extracted {len(text_content)} characters")
 
-    else:
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Only .txt and .pdf files are supported")
-    
-    if not file.size > 1:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="File is empty")
-    
+            preview = text_content[:200].replace('\n', ' ')
+            print(f"Preview: {preview}")
+        else:
+            print("No text extracted")
+
+    if not text_content or len(text_content.strip()) < 10:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Could not extract text from PDF. Try a different file")
 
     new_quiz = models.Quiz(title=title, content=text_content, owner_id=current_user.id, published=published)
     db.add(new_quiz)
