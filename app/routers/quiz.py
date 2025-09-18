@@ -7,6 +7,7 @@ from ..database import get_db
 import re
 from ..config import settings
 from ..pdf_parser import PDFParser
+from ..llm import send_text_to_llm
 
 MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_chunk
 
@@ -55,6 +56,13 @@ async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = De
 
     text_in_chunks = utils.split_text(text_content, MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK)
     #print(text_in_chunks)
+    quiz_questions = send_text_to_llm(text_in_chunks)
+
+    for key, value in quiz_questions.items():
+        new_question_to_database = models.Question(quiz_id=db.query(func.max(models.Quiz.id)), question_text=key, answers=value)
+        db.add(new_question_to_database)
+        db.commit()
+        db.refresh(new_question_to_database)
 
     return new_quiz
 

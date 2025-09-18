@@ -127,46 +127,117 @@ class PDFParser:
 
     def _extract_font_mappings(self) -> dict:
         font_mappings = {}
-        font_objects = []
+        
+        # STEP 1: Find ALL ToUnicode references in the entire PDF
+        all_tounicode_refs = {}
+        tounicode_pattern = rb'/ToUnicode\s+(\d+)\s+(\d+)\s+R'
+        for match in re.finditer(tounicode_pattern, self.pdf_bytes):
+            obj_num = int(match.group(1))
+            gen_num = int(match.group(2))
+            all_tounicode_refs[obj_num] = gen_num
+        
+        print(f"Found {len(all_tounicode_refs)} ToUnicode references in PDF")
+        
+        # STEP 2: Extract ALL ToUnicode CMaps
+        all_cmaps = {}
+        for obj_num, gen_num in all_tounicode_refs.items():
+            cmap = self._extract_tounicode_cmap(obj_num)
+            if cmap:
+                all_cmaps[obj_num] = cmap
+                print(f"  ToUnicode object {obj_num}: {len(cmap)} mappings")
+        
+        # STEP 3: Find font-to-CMap relationships
         font_pattern = rb'(\d+)\s+\d+\s+obj[^>]*?/Type\s*/Font.*?endobj'
+        font_objects = []
+        
         for match in re.finditer(font_pattern, self.pdf_bytes, re.DOTALL):
             obj_num = int(match.group(1))
             obj_content = match.group(0)
             font_objects.append((obj_num, obj_content))
         
-        # Also find font references like /F1, /F2 in the PDF
-        font_refs = {}
-        ref_pattern = rb'/F(\d+)\s+(\d+)\s+\d+\s+R'
-        for match in re.finditer(ref_pattern, self.pdf_bytes):
-            font_id = f"F{match.group(1).decode()}"
-            obj_ref = int(match.group(2))
-            font_refs[font_id] = obj_ref
+        print(f"Found {len(font_objects)} font objects")
         
+        # STEP 4: Look for DescendantFonts which might have the actual mappings
         for obj_num, font_obj in font_objects:
-            name_match = re.search(rb'/BaseFont\s*/([^\s/>]+)', font_obj)
-            if not name_match:
-                continue
-            font_name = name_match.group(1).decode('latin-1', errors='ignore')
-            if '+' in font_name:
-                base_font_name = font_name.split('+')[1]
+            # Check for DescendantFonts (Type 0 fonts use these)
+            descendant_match = re.search(rb'/DescendantFonts\s*\[\s*(\d+)\s+\d+\s+R\s*\]', font_obj)
+            if descendant_match:
+                desc_obj = int(descendant_match.group(1))
+                print(f"  Font {obj_num} has DescendantFont at {desc_obj}")
+                
+                # Get the descendant font object
+                desc_pattern = rb'%d\s+\d+\s+obj(.*?)endobj' % desc_obj
+                desc_match = re.search(desc_pattern, self.pdf_bytes, re.DOTALL)
+                if desc_match:
+                    desc_content = desc_match.group(1)
+                    # Check if descendant has ToUnicode
+                    desc_tounicode = re.search(rb'/ToUnicode\s+(\d+)\s+\d+\s+R', desc_content)
+                    if desc_tounicode:
+                        tounicode_obj = int(desc_tounicode.group(1))
+                        if tounicode_obj in all_cmaps:
+                            print(f"    Found ToUnicode in descendant: {len(all_cmaps[tounicode_obj])} mappings")
+        
+        # STEP 5: Also check for CIDToGIDMap which might help
+        cidtogid_pattern = rb'/CIDToGIDMap\s+(\d+)\s+\d+\s+R'
+        for match in re.finditer(cidtogid_pattern, self.pdf_bytes):
+            obj_num = int(match.group(1))
+            print(f"  Found CIDToGIDMap at object {obj_num}")
+        
+        # STEP 6: Merge ALL CMaps into one comprehensive mapping
+        merged_cmap = {}
+        for obj_num, cmap in all_cmaps.items():
+            for k, v in cmap.items():
+                if k not in merged_cmap:
+                    merged_cmap[k] = v
+                else:
+                    # If conflict, keep both somehow
+                    print(f"    Warning: Duplicate mapping for {k}: {merged_cmap[k]} vs {v}")
+        
+        print(f"FINAL: Merged CMap has {len(merged_cmap)} total unique mappings")
+        
+        # Show what we have
+        if merged_cmap:
+            # Check coverage
+            mapped_chars = set(merged_cmap.values())
+            basic_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            missing = [c for c in basic_chars if c not in mapped_chars]
+            if missing:
+                print(f"  Still missing: {''.join(missing)}")
+        
+        # STEP 7: Build alias -> basefont mapping
+        alias_to_basefont = {}
+        resource_pattern = rb'/Font\s*<<(.+?)>>'
+        for match in re.finditer(resource_pattern, self.pdf_bytes, re.DOTALL):
+            font_block = match.group(1)
+            for alias, obj_num in re.findall(rb'/([Ff]\d+)\s+(\d+)\s+0\s+R', font_block):
+                alias = alias.decode()
+                obj_num = int(obj_num)
+                # szukamy definicji obiektu fontu
+                obj_pattern = rb'%d\s+\d+\s+obj(.*?)endobj' % obj_num
+                obj_match = re.search(obj_pattern, self.pdf_bytes, re.DOTALL)
+                if obj_match:
+                    obj_content = obj_match.group(1)
+                    basefont_match = re.search(rb'/BaseFont/([^\s/]+)', obj_content)
+                    if basefont_match:
+                        basefont = basefont_match.group(1).decode()
+                        alias_to_basefont[alias] = basefont
+                        print(f"Alias {alias} -> {basefont}")
+        
+        # STEP 8: Apply CMap to each alias based on its BaseFont
+        for alias, basefont in alias_to_basefont.items():
+            if basefont in font_mappings:
+                font_mappings[alias] = font_mappings[basefont]
             else:
-                base_font_name = font_name
-            
-            tounicode_match = re.search(rb'/ToUnicode\s+(\d+)\s+\d+\s+R', font_obj)
-            if tounicode_match:
-                tounicode_obj_num = int(tounicode_match.group(1))
-                cmap = self._extract_tounicode_cmap(tounicode_obj_num)
-                if cmap:
-                    font_mappings[font_name] = cmap
-                    font_mappings[base_font_name] = cmap
-                    
-                    # Map F1, F2, etc. to this CMap
-                    for font_id, ref_obj in font_refs.items():
-                        if ref_obj == obj_num:
-                            font_mappings[font_id] = cmap
+                # fallback: przypnij alias bezpośrednio do merged_cmap
+                font_mappings[alias] = merged_cmap
+        
+        # Also add common names
+        font_mappings['Aptos'] = merged_cmap
+        font_mappings['BCDEEE+Aptos'] = merged_cmap
+        font_mappings['BCDFEE+Aptos'] = merged_cmap
         
         return font_mappings
-    
+
 
     def _extract_tounicode_cmap(self, obj_num: int) -> dict:
 
@@ -202,9 +273,40 @@ class PDFParser:
 
         if char_map:
             print(f"CMap loaded with {len(char_map)} mappings")
-            for i, (k, v) in enumerate(list(char_map.items())[:5]):
-                print(f" {k} -> U+{ord(v):04X} ('{v}')")
-
+            
+            # Check which basic Latin letters are present
+            basic_chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            polish_chars = 'ąćęłńóśźżĄĆĘŁŃÓŚŹŻ'
+            
+            mapped_basic = []
+            missing_basic = []
+            mapped_polish = []
+            missing_polish = []
+            
+            # Check what's in the map
+            mapped_values = set(char_map.values())
+            
+            for char in basic_chars:
+                if char in mapped_values:
+                    mapped_basic.append(char)
+                else:
+                    missing_basic.append(char)
+            
+            for char in polish_chars:
+                if char in mapped_values:
+                    mapped_polish.append(char)
+                else:
+                    missing_polish.append(char)
+            
+            print(f"  Mapped basic letters: {''.join(mapped_basic)}")
+            print(f"  MISSING basic letters: {''.join(missing_basic)}")
+            print(f"  Mapped Polish letters: {''.join(mapped_polish)}")
+            print(f"  MISSING Polish letters: {''.join(missing_polish)}")
+            
+            # Show first 10 mappings
+            for i, (k, v) in enumerate(list(char_map.items())[:10]):
+                print(f"  {k} -> '{v}' (U+{ord(v):04X})")
+    
         return char_map
     
 
@@ -620,75 +722,60 @@ class PDFParser:
     def _extract_text_from_stream_advanced(self, stream: bytes, font_mappings: dict) -> str:
         extracted_text = []
         current_font = None
-        
-        font_pattern = rb'/([^\s/]+)\s+[\d.]+\s+Tf'
-        font_match = re.search(font_pattern, stream)
-        if font_match:
-            current_font = font_match.group(1).decode('latin-1', errors='ignore')
-        
-        char_map = {}
-        if current_font and font_mappings:
-            if current_font in font_mappings:
-                char_map = font_mappings[current_font]
-            else:
-                for font_name, mapping in font_mappings.items():
-                    if current_font in font_name or font_name in current_font:
-                        char_map = mapping
-                        break
-        
-        # Fallback if no font match
-        if not char_map and font_mappings:
-            char_map = list(font_mappings.values())[0]
-        
-        # Process TJ arrays - IMPROVED VERSION
-        array_pattern = rb'\[(.*?)\]\s*TJ'
-        for match in re.finditer(array_pattern, stream, re.DOTALL):
-            array_content = match.group(1)
-            
-            # Process the entire array as one text block
-            array_text = []
-            
-            # Split array content into tokens (hex strings and numbers)
-            tokens = re.findall(rb'<([0-9A-Fa-f]+)>|(-?\d+(?:\.\d+)?)', array_content)
-            
-            for token in tokens:
-                if token[0]:  # It's a hex string
-                    hex_str = token[0].decode('ascii')
-                    text = self._decode_hex_string(hex_str, char_map)
-                    if text:
-                        array_text.append(text)
-                elif token[1]:  # It's a number (spacing adjustment)
-                    # In PDF, negative values usually mean tighter spacing
-                    # Values less than -100 typically indicate word spacing
-                    spacing_value = float(token[1])
-                    if spacing_value < -100:  # Threshold for word spacing
-                        array_text.append(' ')
-            
-            # Join this array's text without spaces between hex strings
-            if array_text:
-                combined_text = ''.join(array_text)
-                if combined_text.strip():
-                    extracted_text.append(combined_text)
-        
-        # Process hex + Tj patterns (single strings)
-        hex_pattern = rb'<([0-9A-Fa-f]+)>\s*T[jJ]'
-        for match in re.finditer(hex_pattern, stream):
-            hex_str = match.group(1).decode('ascii')
-            text = self._decode_hex_string(hex_str, char_map)
-            if text and text.strip():
-                extracted_text.append(text)
-        
-        # Process literal strings
-        literal_pattern = rb'\(([^)]*)\)\s*T[jJ]'
-        for match in re.finditer(literal_pattern, stream):
-            text_bytes = match.group(1)
-            text = text_bytes.decode('utf-8', errors='ignore')
-            text = text.replace('\\(', '(').replace('\\)', ')').replace('\\\\', '\\')
-            if text.strip():
-                extracted_text.append(text)
-        
-        # Join with spaces between different text operations
+        current_map = {}
+
+        # Tokenizujemy stream na elementy: <...>, (...), /Fxx, liczby, operatory
+        tokens = re.findall(rb'(<[0-9A-Fa-f]+>|\(.*?\)|/[A-Za-z0-9]+|\S+)', stream, re.DOTALL)
+        i = 0
+        while i < len(tokens):
+            tok = tokens[i]
+
+            # Zmiana fontu: /F1 12 Tf
+            if tok.startswith(b'/F'):
+                current_font = tok[1:].decode('latin-1', errors='ignore')
+                # spróbuj znaleźć mapping dla tego fontu
+                if current_font in font_mappings:
+                    current_map = font_mappings[current_font]
+                else:
+                    # heurystyka: dopasuj po fragmencie nazwy
+                    for font_name, mapping in font_mappings.items():
+                        if current_font in font_name or font_name in current_font:
+                            current_map = mapping
+                            break
+                i += 3  # przeskocz rozmiar i 'Tf'
+                continue
+
+            # Hex string + Tj
+            if tok == b'Tj' and i > 0 and tokens[i-1].startswith(b'<'):
+                hex_str = tokens[i-1].strip(b'<>').decode('ascii')
+                text = self._decode_hex_string(hex_str, current_map)
+                if text:
+                    extracted_text.append(text)
+
+            # Literal string + Tj
+            if tok == b'Tj' and i > 0 and tokens[i-1].startswith(b'('):
+                lit = tokens[i-1][1:-1].decode('latin-1', errors='ignore')
+                extracted_text.append(lit)
+
+            # Tablica TJ
+            if tok == b'TJ' and i > 0 and tokens[i-1].startswith(b'['):
+                array_content = tokens[i-1][1:-1]
+                parts = re.findall(rb'<([0-9A-Fa-f]+)>|(-?\d+)', array_content)
+                block = []
+                for hex_str, spacing in parts:
+                    if hex_str:
+                        text = self._decode_hex_string(hex_str.decode('ascii'), current_map)
+                        if text:
+                            block.append(text)
+                    elif spacing and int(spacing) < -100:
+                        block.append(' ')
+                if block:
+                    extracted_text.append(''.join(block))
+
+            i += 1
+
         return ' '.join(extracted_text)
+
     
 
     def _handle_object_streams(self):
