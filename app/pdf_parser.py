@@ -117,8 +117,33 @@ class PDFParser:
                     i += 2
                     continue
             
-            # No match, skip 2 bytes
-            print(f"          No match at pos {i}, skipping")
+            # Fallback: try to decode as Unicode codepoint, but only for plausible ranges
+            if i + 4 <= len(hex_str):
+                try:
+                    codepoint = int(hex_str[i:i+4], 16)
+                    # Only use fallback for standard Unicode ranges
+                    if (0x0020 <= codepoint <= 0x007E) or (0x0100 <= codepoint <= 0x017F) or (codepoint in [0x0104, 0x0105, 0x0118, 0x0119, 0x0141, 0x0142, 0x0143, 0x0144, 0x00F3, 0x015A, 0x015B, 0x0179, 0x017A, 0x017B, 0x017C]):
+                        char = chr(codepoint)
+                    else:
+                        char = '?'
+                    result.append(char)
+                    i += 4
+                    continue
+                except Exception:
+                    pass
+            if i + 2 <= len(hex_str):
+                try:
+                    codepoint = int(hex_str[i:i+2], 16)
+                    if (0x20 <= codepoint <= 0x7E):
+                        char = chr(codepoint)
+                    else:
+                        char = '?'
+                    result.append(char)
+                    i += 2
+                    continue
+                except Exception:
+                    pass
+            # If all fails, skip 2
             i += 2
         
         decoded = ''.join(result)
