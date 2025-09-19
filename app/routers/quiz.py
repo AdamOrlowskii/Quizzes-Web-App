@@ -1,12 +1,11 @@
-from fastapi import FastAPI, Form, Response, status, HTTPException, Depends, APIRouter, File, UploadFile
+from fastapi import Form, Response, status, HTTPException, Depends, APIRouter, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List, Optional, Annotated
+from typing import List, Optional
 from .. import models, schemas, oauth2, utils
 from ..database import get_db
-import re
 from ..config import settings
-from ..pdf_parser import PDFParser
+from ..pdf_parser.parser import PDFParser
 from ..llm import send_text_to_llm
 
 MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_chunk
@@ -34,8 +33,6 @@ async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = De
         text_content = content.decode('utf-8')
     elif file.filename.endswith('.pdf'):
         parser = PDFParser(content, debug=True)
-        analysis = parser.analyze_pdf()
-        print(f"PDF type: {analysis['type']}, has ToUnicode: {analysis['has_tounicode']}")
         text_content = parser.parse()
 
         if text_content:
