@@ -91,6 +91,22 @@ def get_my_quiz(id: int, db: Session = Depends(get_db), current_user: models.Use
     return quiz
 
 
+@router.get("/play/{id}")
+def play_the_quiz(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
+
+    quiz = db.query(models.Quiz).filter(models.Quiz.id == id).first()
+
+    if not quiz:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Quiz with id: {id} was not found")
+    if not quiz.published:
+        if quiz.owner_id != current_user.id :
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action")
+    
+    questions = db.query(models.Question).filter(models.Question.quiz_id == id).all()
+
+    return questions
+
+
 @router.get("/{id}", response_model=schemas.QuizOut)
 def get_quiz(id: int, db: Session = Depends(get_db)):
 
