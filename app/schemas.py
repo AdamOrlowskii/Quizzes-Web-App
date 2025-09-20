@@ -35,7 +35,7 @@ class Quiz(QuizBase):
 
 class QuizOut(BaseModel):
     Quiz: Quiz
-    votes: int
+    favourites: int
 
     class Config:
         orm_mode = True
@@ -60,6 +60,6 @@ class TokenData(BaseModel):
     id: Optional[str] = None
 
 
-class Vote(BaseModel):
+class Favourite(BaseModel):
     quiz_id: int
     dir: Annotated[int, Field(le=1)]

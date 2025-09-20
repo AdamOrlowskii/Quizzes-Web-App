@@ -19,7 +19,7 @@ router = APIRouter(
 @router.get("/", response_model=List[schemas.QuizOut])
 def get_quizzes(db: Session = Depends(get_db), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
 
-    quizzes = db.query(models.Quiz, func.count(models.Vote.quiz_id).label("votes")).join(models.Vote, models.Vote.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.title.contains(search)).limit(limit).offset(skip).all()
+    quizzes = db.query(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites")).join(models.Favourite, models.Favourite.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.title.contains(search)).limit(limit).offset(skip).all()
 
     return quizzes
 
@@ -67,21 +67,21 @@ async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = De
 @router.get("/my_favourite_quizzes", response_model=List[schemas.QuizOut])
 def get_my_favourite_quizzes(db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
 
-    quizzes = db.query(models.Quiz, func.count(models.Vote.quiz_id).label("votes")).join(models.Vote, models.Vote.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Vote.user_id == current_user.id, models.Quiz.title.contains(search)).limit(limit).offset(skip).all()
+    quizzes = db.query(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites")).join(models.Favourite, models.Favourite.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Favourite.user_id == current_user.id, models.Quiz.title.contains(search)).limit(limit).offset(skip).all()
     return quizzes
 
 
 @router.get("/my_quizzes", response_model=List[schemas.QuizOut])
 def get_my_quizzes(db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user), limit: int = 10, skip: int = 0, search: Optional[str] = ""):
 
-    quizzes = db.query(models.Quiz, func.count(models.Vote.quiz_id).label("votes")).join(models.Vote, models.Vote.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.owner_id == current_user.id, models.Quiz.title.contains(search)).limit(limit).offset(skip).all()
+    quizzes = db.query(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites")).join(models.Favourite, models.Favourite.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.owner_id == current_user.id, models.Quiz.title.contains(search)).limit(limit).offset(skip).all()
     return quizzes
 
 
 @router.get("/my_quizzes/{id}", response_model=schemas.QuizOut)
 def get_my_quiz(id: int, db: Session = Depends(get_db), current_user: models.User = Depends(oauth2.get_current_user)):
 
-    quiz = db.query(models.Quiz, func.count(models.Vote.quiz_id).label("votes")).join(models.Vote, models.Vote.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.id == id).first()
+    quiz = db.query(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites")).join(models.Favourite, models.Favourite.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.id == id).first()
 
     if not quiz:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Quiz with id: {id} was not found")
@@ -94,7 +94,7 @@ def get_my_quiz(id: int, db: Session = Depends(get_db), current_user: models.Use
 @router.get("/{id}", response_model=schemas.QuizOut)
 def get_quiz(id: int, db: Session = Depends(get_db)):
 
-    quiz = db.query(models.Quiz, func.count(models.Vote.quiz_id).label("votes")).join(models.Vote, models.Vote.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.id == id).first()
+    quiz = db.query(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites")).join(models.Favourite, models.Favourite.quiz_id == models.Quiz.id, isouter=True).group_by(models.Quiz.id).filter(models.Quiz.id == id).first()
 
     if not quiz:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Quiz with id: {id} was not found")

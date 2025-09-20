@@ -5,7 +5,7 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import quiz, user, auth, vote
+from .routers import quiz, user, auth, favourite
 from .config import settings
 
 print(settings.database_username)
@@ -26,7 +26,7 @@ app.add_middleware(
 app.include_router(quiz.router)
 app.include_router(user.router)
 app.include_router(auth.router)
-app.include_router(vote.router)
+app.include_router(favourite.router)
 
 @app.get("/")
 def root():
