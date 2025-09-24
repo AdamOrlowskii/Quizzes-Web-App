@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-25:12
+55:00
 
 <head>
     <meta charset="UTF-8">
@@ -12,43 +12,64 @@
 </head>
 
 <body>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav :class="[`navbar-${theme}`, `bg-${theme}`, `navbar`, `navbar-expand-lg`]">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">Quiz App</a>
             <ul class="navbar-nav me-auto mb-2 mb-lg-8">
-                <li v-for="(link, index) in links" class="nav-item" :key="index">
-                    <a class="nav-link" aria-current="page" :href="link.url"
-                        :title="'This link goes to the $ {link.text} page'">{{ link.text }}</a>
+                <li v-for="(page, index) in pages" class="nav-item" :key="index">
+                    <a class="nav-link" :class="{active: activePage == index}" aria-current="page" :href="page.link.url"
+                        :title="'This link goes to the ${page.link.text} page'" @click.prevent="activePage = index">{{
+                        page.link.text }}</a>
                 </li>
             </ul>
+            <form class="d-flex">
+                <button class="btn btn-primary" @click.prevent="changeTheme()">Toggle</button>
+            </form>
         </div>
     </nav>
 
     <div id="content" class="container">
-        <h1>{{ pageTitle }}</h1>
-        <p>{{ content }}</p>
+        <h1>{{ pages[activePage].pageTitle }}</h1>
+        <p>{{ pages[activePage].content }}</p>
     </div>
 
     <script>
         Vue.createApp({
             data() {
                 return {
-                    links: [
-                        { text: 'Home', url: 'index.html' },
-                        { text: 'About', url: 'about.html' },
-                        { text: 'Contact', url: 'contact.html' }
+                    activePage: 0,
+                    theme: 'light',
+                    pages: [
+                        {
+                            link: { text: 'Home', url: 'index.html' },
+                            pageTitle: 'Home Page',
+                            content: 'This is the home content'
+                        },
+                        {
+                            link: { text: 'About', url: 'about.html' },
+                            pageTitle: 'About Page',
+                            content: 'This is the about content'
+                        },
+                        {
+                            link: { text: 'Contact', url: 'contact.html' },
+                            pageTitle: 'Contact Page',
+                            content: 'This is the contact content'
+                        }
                     ]
                 };
+            },
+            methods: {
+                changeTheme() {
+                    let theme = 'light';
+
+                    if (this.theme == 'light') {
+                        theme = 'dark';
+                    }
+
+                    this.theme = theme;
+                }
             }
-        }).mount('nav');
-        Vue.createApp({
-            data() {
-                return {
-                    pageTitle: 'Hello, Vue',
-                    content: 'Welcome to the wonderful world of vue!'
-                };
-            }
-        }).mount('#content');
+        }).mount('body');
     </script>
 </body>
 
