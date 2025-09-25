@@ -3,3 +3,6 @@ env/
 .env
 sandbox_testing.py
 *.pdf
+node_modules
+.vscode/
+*.log
