@@ -1,5 +1,5 @@
 {
-  "jobs": [
+  "quizzes": [
     {
       "id": "1",
       "title": "Senior Vue Developer",
@@ -53,20 +53,6 @@
         "name": "Alpha Elite",
         "description": "Alpha Elite is a dynamic startup specializing in digital marketing and web development. We are committed to fostering a diverse and inclusive workplace where creativity and innovation thrive.",
         "contactEmail": "contact@adipisicingelit.com",
-        "contactPhone": "555-555-5555"
-      }
-    },
-    {
-      "id": "5",
-      "title": "Full Stack Vue Developer",
-      "type": "Full-Time",
-      "description": "Exciting opportunity for a Full-Time Front-End Developer in bustling Atlanta, GA. We are seeking a talented individual with a passion for building elegant and scalable web applications. Join our team and make an impact!",
-      "location": "Atlanta, GA",
-      "salary": "$90K - $100K",
-      "company": {
-        "name": "Browning Technologies",
-        "description": "Browning Technologies is a rapidly growing technology company specializing in e-commerce solutions. We offer a dynamic and collaborative work environment where employees are encouraged to think creatively and innovate.",
-        "contactEmail": "contact@consecteturadipisicing.com",
         "contactPhone": "555-555-5555"
       }
     },

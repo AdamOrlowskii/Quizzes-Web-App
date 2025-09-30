@@ -36,11 +36,11 @@ const handleSubmit = async () => {
   }
 
   try {
-    const response = await axios.post(`/api/jobs`, newJob)
+    const response = await axios.post(`/api/quizzes`, newJob)
     toast.success('Job Added Successfully')
-    router.push(`/jobs/${response.data.id}`)
+    router.push(`/quizzes/${response.data.id}`)
   } catch (error) {
-    console.error('Error fetching job', error)
+    console.error('Error fetching quiz', error)
     toast.error('Job Was Not Added')
   }
 }
@@ -89,7 +89,7 @@ const handleSubmit = async () => {
               name="description"
               class="border rounded w-full py-2 px-3"
               rows="4"
-              placeholder="Add any job duties, expectations, requirements, etc"
+              placeholder="Add any quiz duties, expectations, requirements, etc"
             ></textarea>
           </div>
 

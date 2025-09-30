@@ -33,26 +33,28 @@ const isActiveLink = routePath => {
                 >Home</RouterLink
               >
               <RouterLink
-                to="/jobs"
+                to="/quizzes"
                 :class="[
-                  isActiveLink('/jobs') ? 'bg-green-900' : 'hover:bg-gray-900 hover:text-white',
+                  isActiveLink('/quizzes') ? 'bg-green-900' : 'hover:bg-gray-900 hover:text-white',
                   'text-white',
                   'px-3',
                   'py-2',
                   'rounded-md',
                 ]"
-                >Jobs</RouterLink
+                >Quizzes</RouterLink
               >
               <RouterLink
-                to="/jobs/add"
+                to="/quizzes/add"
                 :class="[
-                  isActiveLink('/jobs/add') ? 'bg-green-900' : 'hover:bg-gray-900 hover:text-white',
+                  isActiveLink('/quizzes/add')
+                    ? 'bg-green-900'
+                    : 'hover:bg-gray-900 hover:text-white',
                   'text-white',
                   'px-3',
                   'py-2',
                   'rounded-md',
                 ]"
-                >Add Job</RouterLink
+                >Add Quiz</RouterLink
               >
             </div>
           </div>

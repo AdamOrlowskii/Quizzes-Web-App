@@ -5,11 +5,11 @@ import { defineProps } from 'vue'
 defineProps({
   title: {
     type: String,
-    default: 'Become a Vue Dev',
+    default: 'Welcome to Quiz App',
   },
   subtitle: {
     type: String,
-    default: 'Yaba Yaba Yaba default subtitle',
+    default: 'Learn faster by playing in AI-generated quizzes based on your own materials',
   },
 })
 </script>

@@ -24,7 +24,7 @@ const form = reactive({
 })
 
 const state = reactive({
-  job: {},
+  quiz: {},
   isLoading: true,
 })
 
@@ -46,31 +46,31 @@ const handleSubmit = async () => {
   }
 
   try {
-    const response = await axios.put(`/api/jobs/${jobId}`, updatedJob)
+    const response = await axios.put(`/api/quizzes/${jobId}`, updatedJob)
     toast.success('Job Updated Successfully')
-    router.push(`/jobs/${response.data.id}`)
+    router.push(`/quizzes/${response.data.id}`)
   } catch (error) {
-    console.error('Error fetching job', error)
+    console.error('Error fetching quiz', error)
     toast.error('Job Was Not Updated')
   }
 }
 
 onMounted(async () => {
   try {
-    const response = await axios.get(`/api/jobs/${jobId}`)
-    state.job = response.data
+    const response = await axios.get(`/api/quizzes/${jobId}`)
+    state.quiz = response.data
     // Populate inputs
-    form.type = state.job.type
-    form.title = state.job.title
-    form.description = state.job.description
-    form.salary = state.job.salary
-    form.location = state.job.location
-    form.company.name = state.job.company.name
-    form.company.description = state.job.company.description
-    form.company.contactEmail = state.job.company.contactEmail
-    form.company.contactPhone = state.job.company.contactPhone
+    form.type = state.quiz.type
+    form.title = state.quiz.title
+    form.description = state.quiz.description
+    form.salary = state.quiz.salary
+    form.location = state.quiz.location
+    form.company.name = state.quiz.company.name
+    form.company.description = state.quiz.company.description
+    form.company.contactEmail = state.quiz.company.contactEmail
+    form.company.contactPhone = state.quiz.company.contactPhone
   } catch (error) {
-    console.error('Error fetching job', error)
+    console.error('Error fetching quiz', error)
   } finally {
     state.isLoading = false
   }
@@ -120,7 +120,7 @@ onMounted(async () => {
               name="description"
               class="border rounded w-full py-2 px-3"
               rows="4"
-              placeholder="Add any job duties, expectations, requirements, etc"
+              placeholder="Add any quiz duties, expectations, requirements, etc"
             ></textarea>
           </div>
 
