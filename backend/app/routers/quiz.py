@@ -55,11 +55,15 @@ async def create_quiz(file: UploadFile, title: str = Form(...), db: Session = De
     #print(text_in_chunks)
     quiz_questions = send_text_to_llm(text_in_chunks)
 
-    for key, value in quiz_questions.items():
-        new_question_to_database = models.Question(quiz_id=db.query(func.max(models.Quiz.id)), question_text=key, answers=value)
+    for question in quiz_questions:
+        new_question_to_database = models.Question(
+            quiz_id=db.query(func.max(models.Quiz.id)).scalar(), question_text=question["Q"],
+            answers=question["A"],
+            correct_answer=question["C"])
         db.add(new_question_to_database)
-        db.commit()
-        db.refresh(new_question_to_database)
+    
+    db.commit()
+    db.refresh(new_question_to_database)
 
     return new_quiz
 
@@ -101,8 +105,11 @@ def play_the_quiz(id: int, db: Session = Depends(get_db), current_user: models.U
     if not quiz.published:
         if quiz.owner_id != current_user.id :
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not authorized to perform requested action")
-    
+        
     questions = db.query(models.Question).filter(models.Question.quiz_id == id).all()
+
+    if not questions:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"No questions found for quiz with id: {id}")
 
     return questions
 

@@ -10,10 +10,21 @@ def send_text_to_llm(text_in_chunks):
         
 
 
-    questions = {"What is the second letter of the alphabet?": {1: "A", 2: "B", 3: "C", 4: "D"},
-                 "What is the third letter of the alphabet?": {1: "A", 2: "B", 3: "C", 4: "D"},
-                 "What is the fourth letter of the alphabet?": {1: "A", 2: "B", 3: "C", 4: "D"}
-                 }
+    questions = [{
+                    "Q": "What is the second letter of the alphabet?",
+                    "A": {"1": "A", "2": "B", "3": "C", "4": "D"},
+                    "C": "2"
+                },
+                {
+                    "Q": "What is the third letter of the alphabet?",
+                    "A": {"1": "A", "2": "B", "3": "C", "4": "D"},
+                    "C": "3"},
+                {
+                    "Q": "What is the fourth letter of the alphabet?",
+                    "A": {"1": "A", "2": "B", "3": "C", "4": "D"},
+                    "C": "4"
+                }
+                ]
     #json.loads(questions)
 
     return questions

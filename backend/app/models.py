@@ -42,5 +42,6 @@ class Question(Base):
     quiz_id = Column(Integer, ForeignKey("quizzes.id", ondelete="CASCADE"), nullable=False)
     question_text = Column(String, nullable=False)
     answers = Column(JSON, nullable=False)
+    correct_answer = Column(String, nullable=False)
 
     quiz = relationship("Quiz", back_populates="questions")

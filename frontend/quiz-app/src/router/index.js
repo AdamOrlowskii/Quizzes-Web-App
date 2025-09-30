@@ -1,10 +1,10 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import JobsView from '@/views/JobsView.vue'
+import QuizzesView from '@/views/QuizzesView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
-import JobView from '@/views/JobView.vue'
-import AddJobView from '@/views/AddJobView.vue'
-import EditJobView from '@/views/EditJobView.vue'
+import QuizView from '@/views/QuizView.vue'
+import AddJobView from '@/views/AddQuizView.vue'
+import EditQuizView from '@/views/EditQuizView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,12 +17,12 @@ const router = createRouter({
     {
       path: '/quizzes',
       name: 'quizzes',
-      component: JobsView,
+      component: QuizzesView,
     },
     {
       path: '/quizzes/:id',
       name: 'quiz',
-      component: JobView,
+      component: QuizView,
     },
     {
       path: '/quizzes/add',
@@ -32,7 +32,7 @@ const router = createRouter({
     {
       path: '/quizzes/edit/:id',
       name: 'edit-quiz',
-      component: EditJobView,
+      component: EditQuizView,
     },
     {
       path: '/:catchAll(.*)',

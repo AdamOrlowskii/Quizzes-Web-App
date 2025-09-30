@@ -12,17 +12,17 @@ import Card from '@/components/Card.vue'
           <p class="mt-2 mb-4">Browse thousands of quizzes created by other users</p>
           <RouterLink
             to="/quizzes"
-            class="inline-block bg-black text-white rounded-lg px-4 py-2 hover:bg-gray-700"
+            class="inline-block bg-purple-500 text-white rounded-lg px-4 py-2 hover:bg-purple-600"
           >
             Browse Quizzes
           </RouterLink>
         </Card>
-        <Card bg="bg-red-100">
+        <Card>
           <h2 class="text-2xl font-bold">Create quiz</h2>
           <p class="mt-2 mb-4">Create your own quiz and learn from your own materials</p>
           <RouterLink
             to="/quizzes/add"
-            class="inline-block bg-green-500 text-white rounded-lg px-4 py-2 hover:bg-green-600"
+            class="inline-block bg-purple-500 text-white rounded-lg px-4 py-2 hover:bg-purple-600"
           >
             Add Quiz
           </RouterLink>

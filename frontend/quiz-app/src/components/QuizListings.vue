@@ -1,6 +1,6 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import JobListing from '@/components/JobListing.vue'
+import JobListing from '@/components/QuizCard.vue'
 import { reactive, defineProps, onMounted } from 'vue'
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue'
 import axios from 'axios'
@@ -31,9 +31,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="bg-blue-50 px-4 py-10">
+  <section class="bg-purple-50 px-4 py-10">
     <div class="container-xl lg:container m-auto">
-      <h2 class="text-3xl font-bold text-green-500 mb-6 text-center">Browse Quizzes</h2>
+      <h2 class="text-3xl font-bold text-purple-500 mb-6 text-center">Browse Quizzes</h2>
       <!-- Show loading spinner while loading is true -->
       <div v-if="state.isLoading" class="text-center text-gray-500 py-6">
         <PulseLoader />
@@ -42,9 +42,9 @@ onMounted(async () => {
       <!-- Show quiz listing when done loading-->
       <div v-else class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <JobListing
-          v-for="quiz in state.quizzes.slice(0, limit || state.quizzes.length)"
-          :key="quiz.id"
-          :quiz="quiz"
+          v-for="quizItem in state.quizzes.slice(0, limit || state.quizzes.length)"
+          :key="quizItem.Quiz.id"
+          :quiz="quizItem.Quiz"
         />
       </div>
     </div>
@@ -53,7 +53,7 @@ onMounted(async () => {
   <section v-id="showButton" class="m-auto max-w-lg my-10 px-6">
     <RouterLink
       to="/quizzes"
-      class="block bg-black text-white text-center py-4 px-6 rounded-xl hover:bg-gray-700"
+      class="block bg-purple-900 text-white text-center py-4 px-6 rounded-xl hover:bg-gray-700"
       >View All Quizzes</RouterLink
     >
   </section>
