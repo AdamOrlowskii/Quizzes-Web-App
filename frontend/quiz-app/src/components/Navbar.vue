@@ -42,6 +42,19 @@ const isActiveLink = routePath => {
                 >Quizzes</RouterLink
               >
               <RouterLink
+                to="/quizzes/my_quizzes"
+                :class="[
+                  isActiveLink('/quizzes/my_quizzes')
+                    ? 'bg-purple-900'
+                    : 'hover:bg-gray-900 hover:text-white',
+                  'text-white',
+                  'px-3',
+                  'py-2',
+                  'rounded-md',
+                ]"
+                >My Quizzes</RouterLink
+              >
+              <RouterLink
                 to="/quizzes/add"
                 :class="[
                   isActiveLink('/quizzes/add')
@@ -53,6 +66,28 @@ const isActiveLink = routePath => {
                   'rounded-md',
                 ]"
                 >Add Quiz</RouterLink
+              >
+              <RouterLink
+                to="/login"
+                :class="[
+                  isActiveLink('/login') ? 'bg-purple-900' : 'hover:bg-gray-900 hover:text-white',
+                  'text-white',
+                  'px-3',
+                  'py-2',
+                  'rounded-md',
+                ]"
+                >Login</RouterLink
+              >
+              <RouterLink
+                to="/users"
+                :class="[
+                  isActiveLink('/users') ? 'bg-purple-900' : 'hover:bg-gray-900 hover:text-white',
+                  'text-white',
+                  'px-3',
+                  'py-2',
+                  'rounded-md',
+                ]"
+                >Sign Up</RouterLink
               >
             </div>
           </div>
