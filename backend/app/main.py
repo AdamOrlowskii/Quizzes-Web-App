@@ -1,15 +1,16 @@
 # uvicorn app.main:app --reload
 
-#alembic revision --autogenerate -m ""
-#alembic upgrade head
+# alembic revision --autogenerate -m ""
+# alembic upgrade head
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routers import quiz, user, auth, favourite
+
 from .config import settings
+from .routers import auth, favourite, quiz, user
 
 print(settings.database_username)
-#models.Base.metadata.create_all(bind=engine)
+# models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -27,6 +28,7 @@ app.include_router(quiz.router)
 app.include_router(user.router)
 app.include_router(auth.router)
 app.include_router(favourite.router)
+
 
 @app.get("/")
 def root():
