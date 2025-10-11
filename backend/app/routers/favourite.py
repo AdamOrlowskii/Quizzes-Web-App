@@ -2,20 +2,21 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from .. import database, models, oauth2, schemas
+from app.database import get_db
+from app.models import Quiz, User
+from app.oauth2 import get_current_user
+from app.schemas import Favourite
 
 router = APIRouter(prefix="/favourites", tags=["Favourite"])
 
 
 @router.post("/", status_code=status.HTTP_201_CREATED)
 async def add_to_favourites(
-    favourite: schemas.Favourite,
-    db: AsyncSession = Depends(database.get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    favourite: Favourite,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(models.Quiz).where(models.Quiz.id == favourite.quiz_id)
-    )
+    result = await db.execute(select(Quiz).where(Quiz.id == favourite.quiz_id))
 
     quiz = result.scalar_one_or_none()
 
@@ -26,9 +27,9 @@ async def add_to_favourites(
         )
 
     result = await db.execute(
-        select(models.Favourite).where(
-            models.Favourite.quiz_id == favourite.quiz_id,
-            models.Favourite.user_id == current_user.id,
+        select(Favourite).where(
+            Favourite.quiz_id == favourite.quiz_id,
+            Favourite.user_id == current_user.id,
         )
     )
 
@@ -40,9 +41,7 @@ async def add_to_favourites(
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"User {current_user.id} has already added this quiz to favourites {favourite.quiz_id}",
             )
-        new_favourite = models.Favourite(
-            quiz_id=favourite.quiz_id, user_id=current_user.id
-        )
+        new_favourite = Favourite(quiz_id=favourite.quiz_id, user_id=current_user.id)
         db.add(new_favourite)
         await db.commit()
         await db.refresh(new_favourite)

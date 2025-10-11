@@ -13,11 +13,17 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from .. import models, oauth2, schemas, utils
-from ..config import settings
-from ..database import get_db
-from ..llm import send_text_to_llm
-from ..pdf_parser.parser import PDFParser
+from app.config import settings
+from app.database import get_db
+from app.llm import send_text_to_llm
+from app.models import Favourite as Favourite_model
+from app.models import Question as Question_model
+from app.models import Quiz as Quiz_model
+from app.models import User as User_model
+from app.oauth2 import get_current_user
+from app.pdf_parser.parser import PDFParser
+from app.schemas import Quiz, QuizCreate, QuizOut
+from app.utils import split_text
 
 MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_chunk
 
@@ -25,11 +31,11 @@ router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
 
 @router.get("/testauth")
-async def test_auth(current_user: models.User = Depends(oauth2.get_current_user)):
+async def test_auth(current_user: User_model = Depends(get_current_user)):
     return {"user_id": current_user.id, "email": current_user.email}
 
 
-@router.get("/", response_model=List[schemas.QuizOut])
+@router.get("/", response_model=List[QuizOut])
 async def get_quizzes(
     db: AsyncSession = Depends(get_db),
     limit: int = 10,
@@ -37,11 +43,11 @@ async def get_quizzes(
     search: Optional[str] = "",
 ):
     query = (
-        select(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites"))
-        .outerjoin(models.Favourite, models.Favourite.quiz_id == models.Quiz.id)
-        .options(selectinload(models.Quiz.owner))
-        .group_by(models.Quiz.id)
-        .where(models.Quiz.title.contains(search))
+        select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
+        .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
+        .options(selectinload(Quiz_model.owner))
+        .group_by(Quiz_model.id)
+        .where(Quiz_model.title.contains(search))
         .limit(limit)
         .offset(skip)
     )
@@ -52,12 +58,12 @@ async def get_quizzes(
     return quizzes
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.Quiz)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=Quiz)
 async def create_quiz(
     file: UploadFile,
     title: str = Form(...),
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    current_user: User_model = Depends(get_current_user),
     published: bool = True,
 ):
     content = await file.read()
@@ -79,24 +85,22 @@ async def create_quiz(
             detail="Could not extract text from PDF. Try a different file",
         )
 
-    new_quiz = models.Quiz(
+    new_quiz = Quiz_model(
         title=title, content=text_content, owner_id=current_user.id, published=published
     )
     db.add(new_quiz)
     await db.commit()
     await db.refresh(new_quiz)
 
-    text_in_chunks = utils.split_text(
-        text_content, MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK
-    )
+    text_in_chunks = split_text(text_content, MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK)
 
     quiz_questions = send_text_to_llm(text_in_chunks)
 
-    result = await db.execute(select(func.max(models.Quiz.id)))
+    result = await db.execute(select(func.max(Quiz_model.id)))
     max_quiz_id = result.scalar()
 
     for question in quiz_questions:
-        new_question_to_database = models.Question(
+        new_question_to_database = Question_model(
             quiz_id=max_quiz_id,  # or simply use new_quiz.id
             question_text=question["Q"],
             answers=question["A"],
@@ -110,22 +114,22 @@ async def create_quiz(
     return new_quiz
 
 
-@router.get("/my_favourite_quizzes", response_model=List[schemas.QuizOut])
+@router.get("/my_favourite_quizzes", response_model=List[QuizOut])
 async def get_my_favourite_quizzes(
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    current_user: User_model = Depends(get_current_user),
     limit: int = 10,
     skip: int = 0,
     search: Optional[str] = "",
 ):
     query = (
-        select(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites"))
-        .outerjoin(models.Favourite, models.Favourite.quiz_id == models.Quiz.id)
-        .options(selectinload(models.Quiz.owner))
-        .group_by(models.Quiz.id)
+        select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
+        .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
+        .options(selectinload(Quiz_model.owner))
+        .group_by(Quiz_model.id)
         .where(
-            models.Favourite.user_id == current_user.id,
-            models.Quiz.title.contains(search),
+            Favourite_model.user_id == current_user.id,
+            Quiz_model.title.contains(search),
         )
         .limit(limit)
         .offset(skip)
@@ -137,22 +141,22 @@ async def get_my_favourite_quizzes(
     return quizzes
 
 
-@router.get("/my_quizzes", response_model=List[schemas.QuizOut])
+@router.get("/my_quizzes", response_model=List[QuizOut])
 async def get_my_quizzes(
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    current_user: User_model = Depends(get_current_user),
     limit: int = 10,
     skip: int = 0,
     search: Optional[str] = "",
 ):
     query = (
-        select(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites"))
-        .outerjoin(models.Favourite, models.Favourite.quiz_id == models.Quiz.id)
-        .options(selectinload(models.Quiz.owner))
-        .group_by(models.Quiz.id)
+        select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
+        .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
+        .options(selectinload(Quiz_model.owner))
+        .group_by(Quiz_model.id)
         .where(
-            models.Quiz.owner_id == current_user.id,
-            models.Quiz.title.contains(search),
+            Quiz_model.owner_id == current_user.id,
+            Quiz_model.title.contains(search),
         )
         .limit(limit)
         .offset(skip)
@@ -164,18 +168,18 @@ async def get_my_quizzes(
     return quizzes
 
 
-@router.get("/my_quizzes/{id}", response_model=schemas.QuizOut)
+@router.get("/my_quizzes/{id}", response_model=QuizOut)
 async def get_my_quiz(
     id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    current_user: User_model = Depends(get_current_user),
 ):
     query = (
-        select(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites"))
-        .outerjoin(models.Favourite, models.Favourite.quiz_id == models.Quiz.id)
-        .options(selectinload(models.Quiz.owner))
-        .group_by(models.Quiz.id)
-        .where(models.Quiz.id == id)
+        select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
+        .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
+        .options(selectinload(Quiz_model.owner))
+        .group_by(Quiz_model.id)
+        .where(Quiz_model.id == id)
     )
 
     result = await db.execute(query)
@@ -198,10 +202,10 @@ async def get_my_quiz(
 async def play_the_quiz(
     id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    current_user: User_model = Depends(get_current_user),
 ):
     # Get the quiz
-    result = await db.execute(select(models.Quiz).where(models.Quiz.id == id))
+    result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
     quiz = result.scalar_one_or_none()
 
     if not quiz:
@@ -219,7 +223,7 @@ async def play_the_quiz(
 
     # Get the questions
     result = await db.execute(
-        select(models.Question).where(models.Question.quiz_id == id)
+        select(Question_model).where(Question_model.quiz_id == id)
     )
     questions = result.scalars().all()
 
@@ -232,14 +236,14 @@ async def play_the_quiz(
     return questions
 
 
-@router.get("/{id}", response_model=schemas.QuizOut)
+@router.get("/{id}", response_model=QuizOut)
 async def get_quiz(id: int, db: AsyncSession = Depends(get_db)):
     query = (
-        select(models.Quiz, func.count(models.Favourite.quiz_id).label("favourites"))
-        .outerjoin(models.Favourite, models.Favourite.quiz_id == models.Quiz.id)
-        .options(selectinload(models.Quiz.owner))
-        .group_by(models.Quiz.id)
-        .where(models.Quiz.id == id)
+        select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
+        .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
+        .options(selectinload(Quiz_model.owner))
+        .group_by(Quiz_model.id)
+        .where(Quiz_model.id == id)
     )
 
     result = await db.execute(query)
@@ -258,9 +262,9 @@ async def get_quiz(id: int, db: AsyncSession = Depends(get_db)):
 async def delete_quiz(
     id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    current_user: User_model = Depends(get_current_user),
 ):
-    result = db.execute(select(models.Quiz).where(models.Quiz.id == id))
+    result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
 
     quiz = result.scalar_one_or_none()
 
@@ -282,14 +286,14 @@ async def delete_quiz(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/{id}", response_model=schemas.Quiz)
+@router.put("/{id}", response_model=Quiz)
 async def update_quiz(
     id: int,
-    updated_quiz: schemas.QuizCreate,
+    updated_quiz: QuizCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: models.User = Depends(oauth2.get_current_user),
+    current_user: User_model = Depends(get_current_user),
 ):
-    result = await db.execute(select(models.Quiz).where(models.Quiz.id == id))
+    result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
 
     quiz = result.scalar_one_or_none()
 

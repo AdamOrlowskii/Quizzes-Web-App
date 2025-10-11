@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
-from typing import Optional, Annotated
+from typing import Annotated, Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class QuizBase(BaseModel):

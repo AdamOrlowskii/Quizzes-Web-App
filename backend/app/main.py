@@ -6,8 +6,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .config import settings
-from .routers import auth, favourite, quiz, user
+from app.config import settings
+from app.routers import auth, favourite, quiz, user
 
 print(settings.database_username)
 # models.Base.metadata.create_all(bind=engine)

@@ -6,8 +6,10 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from . import database, models, schemas
-from .config import settings
+from app.config import settings
+from app.database import get_db
+from app.models import User
+from app.schemas import TokenData
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -20,17 +22,17 @@ def create_access_token(data: dict):
     to_encode = data.copy()
     to_encode["user_id"] = str(to_encode["user_id"])
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+
     print(f"Current time: {datetime.utcnow()}")  # DEBUG
     print(f"Token expires at: {expire}")  # DEBUG
     print(f"Minutes until expiration: {ACCESS_TOKEN_EXPIRE_MINUTES}")  # DEBUG
-    
+
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-def verify_access_token(token: str, credentials_exception):
+def verify_access_token(token: str, credentials_exception) -> TokenData:
     try:
         print("Verifying token: {token[:50]}...")  # DEBUG
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -43,7 +45,7 @@ def verify_access_token(token: str, credentials_exception):
             print("ERROR: user_id is None!")  # DEBUG
             raise credentials_exception
 
-        token_data = schemas.TokenData(id=id)
+        token_data = TokenData(id=id)
         print("Created token_data successfully")  # DEBUG
         return token_data
 
@@ -53,7 +55,7 @@ def verify_access_token(token: str, credentials_exception):
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(database.get_db)
+    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
 ):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -70,7 +72,7 @@ async def get_current_user(
     user_id = int(token_data.id)
     print(f"Querying for user_id: {user_id}")  # DEBUG
 
-    result = await db.execute(select(models.User).where(models.User.id == user_id))
+    result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
 
     print(f"Found user: {user}")  # DEBUG

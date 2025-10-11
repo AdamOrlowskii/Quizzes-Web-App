@@ -3,7 +3,6 @@ from typing import Optional
 
 
 def parse_xref_table(pdf_bytes: bytes, xref_table: dict):
-
     xref_offset = find_xref_offset(pdf_bytes)
 
     if xref_offset:
@@ -13,30 +12,28 @@ def parse_xref_table(pdf_bytes: bytes, xref_table: dict):
 
 
 def find_xref_offset(pdf_bytes: bytes) -> Optional[int]:
-
     tail = pdf_bytes[-1024:]
 
-    match = re.search(rb'startxref\s+(\d+)', tail)
+    match = re.search(rb"startxref\s+(\d+)", tail)
     if match:
         return int(match.group(1))
-    
+
     return None
 
 
 def parse_traditional_xref(pdf_bytes: bytes, offset: int, xref_table: dict):
-
     xref_section = pdf_bytes[offset:]
 
-    lines = xref_section.split(b'\n')
-    i=0
+    lines = xref_section.split(b"\n")
+    i = 0
 
-    if lines[i].strip() == b'xref':
+    if lines[i].strip() == b"xref":
         i += 1
-    
+
     while i < len(lines):
         line = lines[i].strip()
 
-        match = re.match(rb'(\d+)\s+(\d+)$', line)
+        match = re.match(rb"(\d+)\s+(\d+)$", line)
         if match:
             start_obj = int(match.group(1))
             num_objs = int(match.group(2))
@@ -46,27 +43,26 @@ def parse_traditional_xref(pdf_bytes: bytes, offset: int, xref_table: dict):
                 if i < len(lines):
                     entry = lines[i].strip()
 
-                    entry_match = re.match(rb'(\d{10})\s+(\d{5})\s+([fn])', entry)
+                    entry_match = re.match(rb"(\d{10})\s+(\d{5})\s+([fn])", entry)
                     if entry_match:
                         offset = int(entry_match.group(1))
                         generation = int(entry_match.group(2))
-                        in_use = entry_match.group(3) == b'n'
+                        in_use = entry_match.group(3) == b"n"
 
                         if in_use and offset > 0:
                             obj_num = start_obj + j
                             xref_table[obj_num] = offset
-                    
+
                     i += 1
-        
-        elif line == b'trailer':
+
+        elif line == b"trailer":
             break
         else:
             i += 1
 
 
 def scan_for_objects(pdf_bytes: bytes, xref_table: dict):
-    
-    pattern = rb'(\d+)\s+(\d+)\s+obj'
+    pattern = rb"(\d+)\s+(\d+)\s+obj"
 
     for match in re.finditer(pattern, pdf_bytes):
         obj_num = int(match.group(1))

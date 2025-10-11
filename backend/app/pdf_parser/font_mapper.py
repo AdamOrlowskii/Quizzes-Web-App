@@ -1,5 +1,5 @@
 import re
-from .stream_handler import _extract_stream_from_object
+from app.pdf_parser.stream_handler import _extract_stream_from_object
 
 
 def extract_fontfile2_cmap(obj_num, pdf_bytes: bytes):

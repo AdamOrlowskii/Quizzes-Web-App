@@ -1,5 +1,6 @@
-from passlib.context import CryptContext
 import re
+
+from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -13,8 +14,7 @@ def verify(plain_password, hashed_password):
 
 
 def split_text(text: str, max_chunk_length: int):
-    
-    sentences = re.split(r'(?<=[.!?]) +', text)
+    sentences = re.split(r"(?<=[.!?]) +", text)
 
     chunks = [""]
 
