@@ -34,7 +34,7 @@ class User(Base):
     created_at = Column(
         TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
     )
-    quizzes = relationship("Quiz", back_populates="owner")
+    quizzes = relationship("Quiz", back_populates="owner", cascade="all, delete-orphan")
 
 
 class Favourite(Base):

@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Annotated, Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr
 
 
 class QuizBase(BaseModel):
@@ -23,7 +23,6 @@ class UserOut(BaseModel):
         orm_mode = True
 
 
-# Response model
 class Quiz(QuizBase):
     id: int
     created_at: datetime
@@ -61,6 +60,6 @@ class TokenData(BaseModel):
     id: Optional[str] = None
 
 
-class Favourite(BaseModel):
+class FavouriteCreate(BaseModel):
     quiz_id: int
-    dir: Annotated[int, Field(le=1)]
+    dir: Literal[0, 1]
