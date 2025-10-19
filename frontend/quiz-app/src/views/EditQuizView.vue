@@ -3,7 +3,7 @@ import router from '@/router'
 import { reactive, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import axios from 'axios'
+import { quizAPI } from '@/services/api'
 
 const route = useRoute()
 const quizId = route.params.id
@@ -41,6 +41,13 @@ const removeQuestion = index => {
 }
 
 const handleSubmit = async () => {
+  console.log('=== DEBUG START ===')
+  console.log('STATE.QUIZ:', state.quiz)
+  console.log('FORM.TITLE:', form.title)
+  console.log('CONTENT:', state.quiz.content)
+  console.log('PUBLISHED:', state.quiz.published)
+  console.log('=== DEBUG END ===')
+
   for (let i = 0; i < form.questions.length; i++) {
     const q = form.questions[i]
     if (!q.question_text.trim()) {
@@ -63,17 +70,24 @@ const handleSubmit = async () => {
   state.isSaving = true
 
   try {
-    await axios.put(`/api/quizzes/${quizId}`, {
+    // Aktualizuj tytuł
+    await quizAPI.update(quizId, {
       title: form.title,
+      content: state.quiz.content,
+      published: state.quiz.published,
     })
 
-    await axios.put(`/api/quizzes/${quizId}/questions`, form.questions)
+    // Aktualizuj pytania
+    if (form.questions.length > 0) {
+      await quizAPI.updateQuestions(quizId, form.questions)
+    }
 
     toast.success('Quiz Updated Successfully')
     router.push(`/quizzes/${quizId}`)
   } catch (error) {
     console.error('Error updating quiz', error)
-    toast.error('Failed to update quiz')
+    const errorMessage = error.response?.data?.detail || 'Failed to update quiz'
+    toast.error(errorMessage)
   } finally {
     state.isSaving = false
   }
@@ -81,11 +95,33 @@ const handleSubmit = async () => {
 
 onMounted(async () => {
   try {
-    const quizResponse = await axios.get(`/api/quizzes/${quizId}`)
-    state.quiz = quizResponse.data
-    form.title = state.quiz.title
-    const questionsResponse = await axios.get(`/api/quizzes/${quizId}/questions`)
-    form.questions = questionsResponse.data
+    const quizResponse = await quizAPI.getById(quizId)
+
+    console.log('RAW RESPONSE:', quizResponse.data) // Debug
+
+    // ✅ Backend zwraca {Quiz: {...}, favourites: 1}
+    let quizData = quizResponse.data
+
+    // Jeśli ma pole Quiz, wyciągnij go
+    if (quizData.Quiz) {
+      quizData = quizData.Quiz
+    } else if (Array.isArray(quizData)) {
+      quizData = quizData[0]
+    }
+
+    state.quiz = quizData
+    form.title = quizData.title
+
+    console.log('PARSED QUIZ:', state.quiz) // Debug
+
+    // Załaduj pytania
+    try {
+      const questionsResponse = await quizAPI.getQuestions(quizId)
+      form.questions = questionsResponse.data
+    } catch (err) {
+      console.warn('No questions found:', err)
+      form.questions = []
+    }
   } catch (error) {
     console.error('Error fetching quiz data', error)
     toast.error('Failed to load quiz')

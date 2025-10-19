@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import axios from 'axios'
+import { authAPI } from '@/services/api' // ✅ Zmienione
 
 const router = useRouter()
 const toast = useToast()
@@ -31,11 +31,8 @@ const handleSignUp = async () => {
   isLoading.value = true
 
   try {
-    // Create account
-    await axios.post('/api/users', {
-      email: form.email,
-      password: form.password,
-    })
+    // ✅ Zmienione - użycie authAPI
+    await authAPI.register(form.email, form.password)
 
     toast.success('Account created successfully! Please login.')
     router.push('/login')
@@ -75,6 +72,7 @@ const handleSignUp = async () => {
               id="email"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
               placeholder="you@example.com"
+              :disabled="isLoading"
               required
             />
             <p class="text-xs text-gray-500 mt-1">We'll never share your email with anyone else.</p>
@@ -89,6 +87,7 @@ const handleSignUp = async () => {
               id="password"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
               placeholder="••••••••"
+              :disabled="isLoading"
               required
               minlength="6"
             />
@@ -106,6 +105,7 @@ const handleSignUp = async () => {
               id="confirmPassword"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
               placeholder="••••••••"
+              :disabled="isLoading"
               required
             />
           </div>

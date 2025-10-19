@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import axios from 'axios'
+import { authAPI } from '@/services/api' //  Zmienione
 
 const router = useRouter()
 const toast = useToast()
@@ -18,23 +18,11 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    // FastAPI OAuth2 expects 'username' field, not 'email'
-    const formData = new FormData()
-    formData.append('username', form.email)
-    formData.append('password', form.password)
+    //  Użycie authAPI
+    await authAPI.login(form.email, form.password)
 
-    const response = await axios.post('/api/login', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
-
-    // Store the token
-    localStorage.setItem('token', response.data.access_token)
+    //  Opcjonalnie zapisz email (token już jest zapisany w authAPI)
     localStorage.setItem('userEmail', form.email)
-
-    // Set default authorization header for future requests
-    axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`
 
     toast.success('Login successful!')
     router.push('/quizzes')
@@ -74,6 +62,7 @@ const handleLogin = async () => {
               id="email"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
               placeholder="you@example.com"
+              :disabled="isLoading"
               required
             />
           </div>
@@ -87,6 +76,7 @@ const handleLogin = async () => {
               id="password"
               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-purple-500"
               placeholder="••••••••"
+              :disabled="isLoading"
               required
             />
           </div>
@@ -143,7 +133,7 @@ const handleLogin = async () => {
         <div class="text-center">
           <p class="text-gray-600">
             Don't have an account?
-            <RouterLink to="/users" class="text-purple-500 hover:text-purple-700 font-semibold">
+            <RouterLink to="/signup" class="text-purple-500 hover:text-purple-700 font-semibold">
               Sign Up
             </RouterLink>
           </p>

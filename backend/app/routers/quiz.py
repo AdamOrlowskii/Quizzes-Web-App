@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import User as User_model
 from app.oauth2 import get_current_user
-from app.schemas import Quiz, QuizCreate, QuizOut
+from app.schemas import QuestionUpdate, Quiz, QuizCreate, QuizOut
 from app.services.quiz_services import (
     get_all_quizzes,
     get_my_favourite_quizzes,
@@ -23,12 +23,13 @@ from app.services.quiz_services import (
     insert_new_quiz,
     remove_quiz,
     update_quiz_values,
+    update_questions
 )
 
 router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
 
-@router.get("/", response_model=List[QuizOut])
+@router.get("", response_model=List[QuizOut])
 async def get_quizzes(
     db: AsyncSession = Depends(get_db),
     limit: int = 10,
@@ -39,7 +40,7 @@ async def get_quizzes(
     return await get_all_quizzes(db, limit, skip, search)
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=Quiz)
+@router.post("", status_code=status.HTTP_201_CREATED, response_model=Quiz)
 async def create_quiz(
     file: UploadFile,
     title: str = Form(...),
@@ -110,3 +111,14 @@ async def update_quiz(
     current_user: User_model = Depends(get_current_user),
 ):
     return await update_quiz_values(id, updated_quiz, db, current_user)
+
+@router.put("/{id}/questions", status_code=status.HTTP_200_OK)
+async def update_quiz_questions(
+    id: int,
+    questions: List[QuestionUpdate],
+    db: AsyncSession = Depends(get_db),
+    current_user: User_model = Depends(get_current_user),
+):
+
+    result = await update_questions(id, questions, db, current_user)
+    return result

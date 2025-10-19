@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from app.config import settings
 from app.llm import send_text_to_llm
@@ -7,23 +7,30 @@ from app.models import Question as Question_model
 from app.models import Quiz as Quiz_model
 from app.models import User as User_model
 from app.pdf_parser.parser import PDFParser
-from app.schemas import QuizCreate
+from app.schemas import QuizCreate, QuestionUpdate
 from app.utils import split_text
 from fastapi import (
     HTTPException,
     UploadFile,
     status,
 )
-from sqlalchemy import Result, func, select
+from sqlalchemy import Result, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_chunk
 
 
+async def get_quiz_by_id(id, db) -> Quiz_model:
+    result = await db.execute(
+        select(Quiz_model).where(Quiz_model.id == id)
+    )
+    return result.scalar_one_or_none()
+
+
 async def get_all_quizzes(
     db: AsyncSession, limit: int, skip: int, search: Optional[str]
-) -> Result:
+):
     query = (
         select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
         .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
@@ -161,8 +168,7 @@ async def get_one_quiz(id, db) -> Result:
 
 
 async def get_questions(id, db, current_user):
-    result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
-    quiz = result.scalar_one_or_none()
+    quiz = await get_quiz_by_id(id, db)
 
     if not quiz:
         raise HTTPException(
@@ -191,9 +197,7 @@ async def get_questions(id, db, current_user):
 
 
 async def remove_quiz(id, db, current_user):
-    result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
-
-    quiz = result.scalar_one_or_none()
+    quiz = await get_quiz_by_id(id, db)
 
     if quiz is None:
         raise HTTPException(
@@ -217,9 +221,7 @@ async def update_quiz_values(
     db: AsyncSession,
     current_user: User_model,
 ):
-    result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
-
-    quiz = result.scalar_one_or_none()
+    quiz = await get_quiz_by_id(id, db)
 
     if quiz is None:
         raise HTTPException(
@@ -239,3 +241,38 @@ async def update_quiz_values(
     await db.commit()
     await db.refresh(quiz)
     return quiz
+
+async def update_questions(
+    id: int,
+    questions: List[QuestionUpdate],
+    db: AsyncSession,
+    current_user: User_model,
+):
+    
+    quiz = await get_quiz_by_id(id, db)
+    if not quiz:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quiz with id: {id} was not found",
+        )
+    
+    if quiz.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to perform requested action",
+        )
+    
+    await db.execute(delete(Question_model).where(Question_model.quiz_id == id))
+    
+    for question_data in questions:
+        new_question = Question_model(
+            quiz_id=id,
+            question_text=question_data.question_text,
+            answers=question_data.answers,
+            correct_answer=question_data.correct_answer,
+        )
+        db.add(new_question)
+    
+    await db.commit()
+    
+    return {"message": f"Updated {len(questions)} questions"}

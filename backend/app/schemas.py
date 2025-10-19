@@ -63,3 +63,9 @@ class TokenData(BaseModel):
 class FavouriteCreate(BaseModel):
     quiz_id: int
     dir: Literal[0, 1]
+
+
+class QuestionUpdate(BaseModel):
+    question_text: str
+    answers: dict
+    correct_answer: str

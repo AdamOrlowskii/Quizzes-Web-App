@@ -1,14 +1,16 @@
 <script setup>
 import router from '@/router'
-import { reactive } from 'vue'
+import { reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
-import axios from 'axios'
+import { quizAPI } from '@/services/api' // Zmienione z axios
 
 const form = reactive({
   title: '',
   file: null,
+  published: true, // Dodane
 })
 
+const uploading = ref(false) // Dodane loading state
 const toast = useToast()
 
 const handleFileChange = event => {
@@ -24,22 +26,27 @@ const handleSubmit = async () => {
     return
   }
 
-  const formData = new FormData()
-  formData.append('title', form.title)
-  formData.append('file', form.file)
+  if (!form.title.trim()) {
+    toast.error('Please enter a quiz title')
+    return
+  }
+
+  uploading.value = true // Start loading
 
   try {
-    const response = await axios.post(`/api/quizzes`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    })
+    // Użycie quizAPI zamiast axios
+    const response = await quizAPI.create(form.file, form.title, form.published)
 
     toast.success('Quiz Added Successfully')
     router.push(`/quizzes/${response.data.id}`)
   } catch (error) {
-    console.error('Error fetching quiz', error)
-    toast.error('Quiz Was Not Added')
+    console.error('Error creating quiz:', error)
+
+    // Lepsze komunikaty błędów
+    const errorMessage = error.response?.data?.detail || 'Quiz Was Not Added'
+    toast.error(errorMessage)
+  } finally {
+    uploading.value = false // Stop loading
   }
 }
 </script>
@@ -60,28 +67,39 @@ const handleSubmit = async () => {
               name="name"
               class="border rounded w-full py-2 px-3 mb-2"
               placeholder="eg. Quiz 1"
+              :disabled="uploading"
               required
             />
           </div>
 
-          <div>
+          <div class="mb-4">
             <label class="block text-gray-700 font-bold mb-2">Upload File</label>
             <input
               type="file"
-              accept=".pdf,.txt."
+              accept=".pdf,.txt"
               @change="handleFileChange"
               class="border rounded w-full py-2 px-3 mb-2"
+              :disabled="uploading"
               required
             />
             <p class="text-gray-600 text-sm">Upload a PDF or TXT file</p>
           </div>
 
+          <!-- Dodana opcja publikacji -->
+          <div class="mb-4">
+            <label class="flex items-center">
+              <input type="checkbox" v-model="form.published" :disabled="uploading" class="mr-2" />
+              <span class="text-gray-700">Publish immediately</span>
+            </label>
+          </div>
+
           <div>
             <button
-              class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline"
+              class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline disabled:bg-gray-400 disabled:cursor-not-allowed"
               type="submit"
+              :disabled="uploading"
             >
-              Add Quiz
+              {{ uploading ? 'Creating Quiz...' : 'Add Quiz' }}
             </button>
           </div>
         </form>
