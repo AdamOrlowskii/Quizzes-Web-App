@@ -1,10 +1,10 @@
 <script setup>
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue'
 import BackButton from '@/components/BackButton.vue'
-import { reactive, onMounted } from 'vue'
+import { reactive, onMounted, computed } from 'vue' // ✅ Dodaj computed
 import { useRoute, RouterLink, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { quizAPI } from '@/services/api' // Zmienione
+import { quizAPI } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,14 +15,27 @@ const state = reactive({
   quiz: {},
   questions: [],
   isLoading: true,
-  isOwner: false,
 })
+
+const isMyQuiz = computed(() => {
+  return state.quiz.owner?.email === localStorage.getItem('userEmail')
+})
+
+const copyQuizLink = async () => {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    toast.success('Quiz link copied to clipboard!')
+  } catch (error) {
+    console.error('Failed to copy:', error)
+    toast.error('Failed to copy link')
+  }
+}
 
 const deleteQuiz = async () => {
   try {
     const confirm = window.confirm('Are you sure you want to delete this quiz?')
     if (confirm) {
-      await quizAPI.delete(quizId) // Zmienione
+      await quizAPI.delete(quizId)
       toast.success('Quiz Deleted Successfully')
       router.push('/quizzes')
     }
@@ -37,6 +50,7 @@ const startQuiz = () => {
 }
 
 const formatDate = dateString => {
+  if (!dateString) return 'N/A'
   return new Date(dateString).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -49,15 +63,16 @@ const formatDate = dateString => {
 onMounted(async () => {
   try {
     const response = await quizAPI.getById(quizId)
+    let quizData = response.data
 
-    // Backend zwraca [Quiz, favourites_count]
-    if (Array.isArray(response.data)) {
-      state.quiz = response.data[0] // Tylko Quiz
-    } else {
-      state.quiz = response.data // Fallback
+    if (quizData.Quiz) {
+      quizData = quizData.Quiz
+    } else if (Array.isArray(quizData)) {
+      quizData = quizData[0]
     }
 
-    // Pobierz pytania...
+    state.quiz = quizData
+
     try {
       const questionsResponse = await quizAPI.getQuestions(quizId)
       state.questions = questionsResponse.data
@@ -80,7 +95,7 @@ onMounted(async () => {
 
       <!-- Loading State -->
       <div v-if="state.isLoading" class="text-center text-gray-500 py-12">
-        <PulseLoader />
+        <PulseLoader :color="'#9333ea'" />
       </div>
 
       <!-- Quiz Content -->
@@ -98,28 +113,16 @@ onMounted(async () => {
                   </h1>
                   <span
                     :class="
-                      state.quiz.published
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-yellow-100 text-yellow-800'
+                      state.quiz.published ? 'bg-green-100 text-black' : 'bg-red-100 text-black'
                     "
                     class="px-3 py-1 rounded-full text-sm font-medium"
                   >
-                    {{ state.quiz.published ? 'Published' : 'Draft' }}
+                    {{ state.quiz.published ? 'Published' : 'Private' }}
                   </span>
                 </div>
 
                 <!-- Quiz Meta Info -->
                 <div class="text-sm text-gray-600 space-y-1">
-                  <div class="flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                      <path
-                        fill-rule="evenodd"
-                        d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    Created by: {{ state.quiz.owner?.email || 'Unknown' }}
-                  </div>
                   <div class="flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path
@@ -190,9 +193,8 @@ onMounted(async () => {
             </div>
           </main>
 
-          <!-- Sidebar -->
+          <!-- Sidebar (bez zmian) -->
           <aside>
-            <!-- Quiz Stats -->
             <div class="bg-white p-6 rounded-lg shadow-md">
               <h3 class="text-xl font-bold mb-4">Quiz Statistics</h3>
               <div class="space-y-3">
@@ -211,8 +213,7 @@ onMounted(async () => {
               </div>
             </div>
 
-            <!-- TODO: CHANGE TO CHECK OWNERSHIP OF THE QUIZ -->
-            <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <div v-if="isMyQuiz" class="bg-white p-6 rounded-lg shadow-md mt-6">
               <h3 class="text-xl font-bold mb-4">Manage Quiz</h3>
               <RouterLink
                 :to="`/quizzes/edit/${quizId}`"
@@ -240,11 +241,10 @@ onMounted(async () => {
               </button>
             </div>
 
-            <!-- Share Quiz -->
             <div class="bg-white p-6 rounded-lg shadow-md mt-6">
               <h3 class="text-xl font-bold mb-4">Share Quiz</h3>
               <button
-                @click="navigator.clipboard.writeText(window.location.href)"
+                @click="copyQuizLink"
                 class="bg-blue-500 hover:bg-blue-600 text-white text-center font-bold py-2 px-4 rounded-full w-full"
               >
                 <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">

@@ -1,10 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { authAPI } from '@/services/api' //  Zmienione
-
-const router = useRouter()
+import { authAPI } from '@/services/api'
 const toast = useToast()
 
 const form = reactive({
@@ -18,14 +15,11 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
-    //  Użycie authAPI
     await authAPI.login(form.email, form.password)
-
-    //  Opcjonalnie zapisz email (token już jest zapisany w authAPI)
     localStorage.setItem('userEmail', form.email)
-
     toast.success('Login successful!')
-    router.push('/quizzes')
+
+    window.location.href = '/quizzes'
   } catch (error) {
     console.error('Login error:', error)
     if (error.response?.status === 401) {
@@ -79,15 +73,6 @@ const handleLogin = async () => {
               :disabled="isLoading"
               required
             />
-          </div>
-
-          <!-- Remember Me & Forgot Password -->
-          <div class="flex items-center justify-between mb-6">
-            <label class="flex items-center">
-              <input type="checkbox" class="mr-2" />
-              <span class="text-sm text-gray-600">Remember me</span>
-            </label>
-            <a href="#" class="text-sm text-purple-500 hover:text-purple-700"> Forgot password? </a>
           </div>
 
           <!-- Login Button -->

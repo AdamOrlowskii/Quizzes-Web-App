@@ -1,4 +1,4 @@
-# uvicorn app.main:app --reload
+# uvicorn app.main:app --reload --port 7000
 
 # alembic revision --autogenerate -m ""
 # alembic upgrade head

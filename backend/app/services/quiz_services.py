@@ -36,10 +36,15 @@ async def get_all_quizzes(
         .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
         .options(selectinload(Quiz_model.owner))
         .group_by(Quiz_model.id)
-        .where(Quiz_model.title.contains(search))
+        .where(Quiz_model.published)
         .limit(limit)
         .offset(skip)
     )
+
+    if search:
+        query = query.where(Quiz_model.title.contains(search))
+    
+    query = query.limit(limit).offset(skip)
 
     result = await db.execute(query)
     return result

@@ -2,15 +2,15 @@
 import router from '@/router'
 import { reactive, ref } from 'vue'
 import { useToast } from 'vue-toastification'
-import { quizAPI } from '@/services/api' // Zmienione z axios
+import { quizAPI } from '@/services/api'
 
 const form = reactive({
   title: '',
   file: null,
-  published: true, // Dodane
+  published: true,
 })
 
-const uploading = ref(false) // Dodane loading state
+const uploading = ref(false)
 const toast = useToast()
 
 const handleFileChange = event => {
@@ -31,22 +31,19 @@ const handleSubmit = async () => {
     return
   }
 
-  uploading.value = true // Start loading
+  uploading.value = true
 
   try {
-    // Użycie quizAPI zamiast axios
     const response = await quizAPI.create(form.file, form.title, form.published)
 
     toast.success('Quiz Added Successfully')
     router.push(`/quizzes/${response.data.id}`)
   } catch (error) {
     console.error('Error creating quiz:', error)
-
-    // Lepsze komunikaty błędów
     const errorMessage = error.response?.data?.detail || 'Quiz Was Not Added'
     toast.error(errorMessage)
   } finally {
-    uploading.value = false // Stop loading
+    uploading.value = false
   }
 }
 </script>
@@ -63,8 +60,6 @@ const handleSubmit = async () => {
             <input
               type="text"
               v-model="form.title"
-              id="name"
-              name="name"
               class="border rounded w-full py-2 px-3 mb-2"
               placeholder="eg. Quiz 1"
               :disabled="uploading"
@@ -85,11 +80,15 @@ const handleSubmit = async () => {
             <p class="text-gray-600 text-sm">Upload a PDF or TXT file</p>
           </div>
 
-          <!-- Dodana opcja publikacji -->
           <div class="mb-4">
             <label class="flex items-center">
-              <input type="checkbox" v-model="form.published" :disabled="uploading" class="mr-2" />
-              <span class="text-gray-700">Publish immediately</span>
+              <input
+                type="checkbox"
+                v-model="form.published"
+                :disabled="uploading"
+                class="mr-2 h-4 w-4"
+              />
+              <span class="text-gray-700">Make it public</span>
             </label>
           </div>
 

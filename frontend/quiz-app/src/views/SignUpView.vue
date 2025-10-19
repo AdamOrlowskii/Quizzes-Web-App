@@ -2,7 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
-import { authAPI } from '@/services/api' // ✅ Zmienione
+import { authAPI } from '@/services/api'
 
 const router = useRouter()
 const toast = useToast()
@@ -16,13 +16,11 @@ const form = reactive({
 const isLoading = ref(false)
 
 const handleSignUp = async () => {
-  // Validate passwords match
   if (form.password !== form.confirmPassword) {
     toast.error('Passwords do not match')
     return
   }
 
-  // Validate password strength (optional)
   if (form.password.length < 6) {
     toast.error('Password must be at least 6 characters')
     return
@@ -31,7 +29,6 @@ const handleSignUp = async () => {
   isLoading.value = true
 
   try {
-    // ✅ Zmienione - użycie authAPI
     await authAPI.register(form.email, form.password)
 
     toast.success('Account created successfully! Please login.')
@@ -108,19 +105,6 @@ const handleSignUp = async () => {
               :disabled="isLoading"
               required
             />
-          </div>
-
-          <!-- Terms & Conditions -->
-          <div class="mb-6">
-            <label class="flex items-start">
-              <input type="checkbox" class="mt-1 mr-2" required />
-              <span class="text-sm text-gray-600">
-                I agree to the
-                <a href="#" class="text-purple-500 hover:text-purple-700">Terms and Conditions</a>
-                and
-                <a href="#" class="text-purple-500 hover:text-purple-700">Privacy Policy</a>
-              </span>
-            </label>
           </div>
 
           <!-- Sign Up Button -->

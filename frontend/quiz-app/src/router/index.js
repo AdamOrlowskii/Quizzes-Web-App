@@ -3,10 +3,11 @@ import HomeView from '@/views/HomeView.vue'
 import QuizzesView from '@/views/QuizzesView.vue'
 import NotFoundView from '@/views/NotFoundView.vue'
 import QuizView from '@/views/QuizView.vue'
-import AddQuizView from '@/views/AddQuizView.vue' // ✅ Poprawiona nazwa
+import AddQuizView from '@/views/AddQuizView.vue'
 import EditQuizView from '@/views/EditQuizView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignUpView from '@/views/SignUpView.vue'
+import PlayQuizView from '@/views/PlayQuizView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,12 +28,12 @@ const router = createRouter({
       component: QuizzesView,
     },
     {
-      path: '/quizzes/add', // ✅ Zmienione z '/quizzes/' na '/quizzes/add'
+      path: '/quizzes/add',
       name: 'add-quiz',
       component: AddQuizView,
     },
     {
-      path: '/quizzes/edit/:id', // ✅ Zmienione - edit musi być przed :id
+      path: '/quizzes/edit/:id',
       name: 'edit-quiz',
       component: EditQuizView,
     },
@@ -40,6 +41,11 @@ const router = createRouter({
       path: '/quizzes/:id',
       name: 'quiz',
       component: QuizView,
+    },
+    {
+      path: '/play/:id',
+      name: 'play-quiz',
+      component: PlayQuizView,
     },
     {
       path: '/login',

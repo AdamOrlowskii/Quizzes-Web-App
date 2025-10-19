@@ -104,6 +104,8 @@ export const favouriteAPI = {
 // ===== USERS =====
 export const userAPI = {
   getById: id => api.get(`/users/${id}`),
+
+  getMe: () => api.get('/users/me'),
 }
 
 export default api

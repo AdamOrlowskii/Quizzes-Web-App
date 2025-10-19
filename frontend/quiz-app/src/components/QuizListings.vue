@@ -1,7 +1,7 @@
 <script setup>
 import { RouterLink, useRoute } from 'vue-router'
 import QuizCard from '@/components/QuizCard.vue'
-import { reactive, defineProps, onMounted, watch } from 'vue' // ✅ Dodaj watch
+import { reactive, defineProps, onMounted, watch } from 'vue'
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue'
 import { quizAPI } from '@/services/api'
 
@@ -20,7 +20,6 @@ const state = reactive({
   isLoading: true,
 })
 
-// ✅ Wyciągnij logikę do osobnej funkcji
 const fetchQuizzes = async () => {
   state.isLoading = true
 
@@ -44,12 +43,10 @@ const fetchQuizzes = async () => {
   }
 }
 
-// ✅ Wywołaj przy montowaniu
 onMounted(() => {
   fetchQuizzes()
 })
 
-// ✅ Wywołaj przy zmianie ścieżki
 watch(
   () => route.path,
   () => {

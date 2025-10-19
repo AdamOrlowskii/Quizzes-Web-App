@@ -11,6 +11,7 @@ const toast = useToast()
 
 const form = reactive({
   title: '',
+  published: true, // ✅ Dodaj to
   questions: [],
 })
 
@@ -41,13 +42,6 @@ const removeQuestion = index => {
 }
 
 const handleSubmit = async () => {
-  console.log('=== DEBUG START ===')
-  console.log('STATE.QUIZ:', state.quiz)
-  console.log('FORM.TITLE:', form.title)
-  console.log('CONTENT:', state.quiz.content)
-  console.log('PUBLISHED:', state.quiz.published)
-  console.log('=== DEBUG END ===')
-
   for (let i = 0; i < form.questions.length; i++) {
     const q = form.questions[i]
     if (!q.question_text.trim()) {
@@ -70,14 +64,12 @@ const handleSubmit = async () => {
   state.isSaving = true
 
   try {
-    // Aktualizuj tytuł
     await quizAPI.update(quizId, {
       title: form.title,
       content: state.quiz.content,
-      published: state.quiz.published,
+      published: form.published, // ✅ Użyj form.published
     })
 
-    // Aktualizuj pytania
     if (form.questions.length > 0) {
       await quizAPI.updateQuestions(quizId, form.questions)
     }
@@ -97,12 +89,8 @@ onMounted(async () => {
   try {
     const quizResponse = await quizAPI.getById(quizId)
 
-    console.log('RAW RESPONSE:', quizResponse.data) // Debug
-
-    // ✅ Backend zwraca {Quiz: {...}, favourites: 1}
     let quizData = quizResponse.data
 
-    // Jeśli ma pole Quiz, wyciągnij go
     if (quizData.Quiz) {
       quizData = quizData.Quiz
     } else if (Array.isArray(quizData)) {
@@ -111,10 +99,8 @@ onMounted(async () => {
 
     state.quiz = quizData
     form.title = quizData.title
+    form.published = quizData.published
 
-    console.log('PARSED QUIZ:', state.quiz) // Debug
-
-    // Załaduj pytania
     try {
       const questionsResponse = await quizAPI.getQuestions(quizId)
       form.questions = questionsResponse.data
@@ -154,6 +140,20 @@ onMounted(async () => {
                 placeholder="Enter quiz title"
                 required
               />
+            </div>
+
+            <div class="mb-6">
+              <label class="flex items-center">
+                <input
+                  type="checkbox"
+                  v-model="form.published"
+                  :disabled="state.isSaving"
+                  class="mr-2 h-4 w-4"
+                />
+                <span class="text-gray-700 font-bold"
+                  >Publish quiz (make it visible to everyone)</span
+                >
+              </label>
             </div>
 
             <!-- Questions Section -->
@@ -282,8 +282,7 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-/* Custom radio button styling */
 input[type='radio']:checked {
-  background-color: #10b981;
+  background-color: #c054d6;
 }
 </style>

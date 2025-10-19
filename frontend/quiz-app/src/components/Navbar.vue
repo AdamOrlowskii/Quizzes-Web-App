@@ -1,11 +1,35 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup>
-import { RouterLink, useRoute } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { authAPI } from '@/services/api'
+import { useToast } from 'vue-toastification'
+
+const route = useRoute()
+const router = useRouter()
+const toast = useToast()
+const isLoggedIn = ref(false)
 
 const isActiveLink = routePath => {
-  const route = useRoute()
   return route.path === routePath
 }
+
+const checkAuth = () => {
+  isLoggedIn.value = !!localStorage.getItem('token')
+}
+
+const handleLogout = () => {
+  authAPI.logout()
+  isLoggedIn.value = false
+  toast.success('Logged out successfully')
+  router.push('/')
+}
+
+onMounted(() => {
+  checkAuth()
+})
+
+window.addEventListener('storage', checkAuth)
 </script>
 
 <template>
@@ -15,7 +39,7 @@ const isActiveLink = routePath => {
         <div class="flex flex-1 items-center justify-center md:items-stretch md:justify-start">
           <!-- Logo -->
           <RouterLink class="flex flex-shrink-0 items-center mr-4" to="/">
-            <span class="hidden md:block text-white text-2xl font-bold ml-2">Quizzes App</span>
+            <span class="hidden md:block text-white text-2xl font-bold ml-2">Quiz App</span>
           </RouterLink>
           <div class="md:ml-auto">
             <div class="flex space-x-2">
@@ -23,72 +47,78 @@ const isActiveLink = routePath => {
                 to="/"
                 :class="[
                   isActiveLink('/') ? 'bg-purple-900' : 'hover:bg-gray-900 hover:text-white',
-                  'text-white',
-                  'px-3',
-                  'py-2',
-                  'rounded-md',
+                  'text-white px-3 py-2 rounded-md',
                 ]"
-                >Home</RouterLink
               >
+                Home
+              </RouterLink>
+
               <RouterLink
                 to="/quizzes"
                 :class="[
                   isActiveLink('/quizzes') ? 'bg-purple-900' : 'hover:bg-gray-900 hover:text-white',
-                  'text-white',
-                  'px-3',
-                  'py-2',
-                  'rounded-md',
+                  'text-white px-3 py-2 rounded-md',
                 ]"
-                >Quizzes</RouterLink
               >
-              <RouterLink
-                to="/quizzes/my_quizzes"
-                :class="[
-                  isActiveLink('/quizzes/my_quizzes')
-                    ? 'bg-purple-900'
-                    : 'hover:bg-gray-900 hover:text-white',
-                  'text-white',
-                  'px-3',
-                  'py-2',
-                  'rounded-md',
-                ]"
-                >My Quizzes</RouterLink
-              >
-              <RouterLink
-                to="/quizzes/add"
-                :class="[
-                  isActiveLink('/quizzes/add')
-                    ? 'bg-purple-900'
-                    : 'hover:bg-gray-900 hover:text-white',
-                  'text-white',
-                  'px-3',
-                  'py-2',
-                  'rounded-md',
-                ]"
-                >Add Quiz</RouterLink
-              >
-              <RouterLink
-                to="/login"
-                :class="[
-                  isActiveLink('/login') ? 'bg-purple-900' : 'hover:bg-gray-900 hover:text-white',
-                  'text-white',
-                  'px-3',
-                  'py-2',
-                  'rounded-md',
-                ]"
-                >Login</RouterLink
-              >
-              <RouterLink
-                to="/signup"
-                :class="[
-                  isActiveLink('/users') ? 'bg-purple-900' : 'hover:bg-gray-900 hover:text-white',
-                  'text-white',
-                  'px-3',
-                  'py-2',
-                  'rounded-md',
-                ]"
-                >Sign Up</RouterLink
-              >
+                Public Quizzes
+              </RouterLink>
+
+              <template v-if="isLoggedIn">
+                <RouterLink
+                  to="/quizzes/my_quizzes"
+                  :class="[
+                    isActiveLink('/quizzes/my_quizzes')
+                      ? 'bg-purple-900'
+                      : 'hover:bg-gray-900 hover:text-white',
+                    'text-white px-3 py-2 rounded-md',
+                  ]"
+                >
+                  My Quizzes
+                </RouterLink>
+
+                <RouterLink
+                  to="/quizzes/add"
+                  :class="[
+                    isActiveLink('/quizzes/add')
+                      ? 'bg-purple-900'
+                      : 'hover:bg-gray-900 hover:text-white',
+                    'text-white px-3 py-2 rounded-md',
+                  ]"
+                >
+                  Add Quiz
+                </RouterLink>
+
+                <button
+                  @click="handleLogout"
+                  class="text-white hover:bg-gray-900 hover:text-white px-3 py-2 rounded-md"
+                >
+                  Logout
+                </button>
+              </template>
+
+              <template v-else>
+                <RouterLink
+                  to="/login"
+                  :class="[
+                    isActiveLink('/login') ? 'bg-purple-900' : 'hover:bg-gray-900 hover:text-white',
+                    'text-white px-3 py-2 rounded-md',
+                  ]"
+                >
+                  Login
+                </RouterLink>
+
+                <RouterLink
+                  to="/signup"
+                  :class="[
+                    isActiveLink('/signup')
+                      ? 'bg-purple-900'
+                      : 'hover:bg-gray-900 hover:text-white',
+                    'text-white px-3 py-2 rounded-md',
+                  ]"
+                >
+                  Sign Up
+                </RouterLink>
+              </template>
             </div>
           </div>
         </div>
