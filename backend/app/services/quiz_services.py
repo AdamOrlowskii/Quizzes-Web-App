@@ -176,7 +176,7 @@ async def get_one_quiz(id, db) -> Result:
     return quiz
 
 
-async def get_questions(id, db, current_user):
+async def get_questions(id, db, current_user) -> List[Question_model]:
     quiz = await get_quiz_by_id(id, db)
 
     if not quiz.published:

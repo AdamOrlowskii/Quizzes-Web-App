@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class QuizBase(BaseModel):
@@ -66,6 +66,20 @@ class FavouriteCreate(BaseModel):
 
 
 class QuestionUpdate(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     question_text: str
-    answers: dict
+    answers: Dict[str, str]
     correct_answer: str
+
+
+class QuestionOut(QuestionUpdate):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    quiz_id: int
+    question_text: str
+    answers: Dict[str, str]
+    correct_answer: str
+
+
+class MessageResponse(BaseModel):
+    message: str

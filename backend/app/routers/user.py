@@ -12,12 +12,20 @@ from app.services.user_services import create_new_user, delete_account, get_one_
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=UserOut)
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=UserOut,
+    summary="Sign up",
+    responses={500: {"description": "User creation failed"}},
+)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
         return await create_new_user(user, db)
     except IntegrityError:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="User already exists"
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -25,7 +33,12 @@ async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
         )
 
 
-@router.delete("/delete_account", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/delete_account",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Delete users account",
+    responses={404: {"description": "User not found"}},
+)
 async def delete_user(
     db: AsyncSession = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
@@ -40,7 +53,8 @@ async def delete_user(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/{id}", response_model=UserOut)
+@router.get("/{id}", response_model=UserOut, summary="Get user data",
+    responses={404: {"description": "User not found"}},)
 async def get_user(id: int, db: AsyncSession = Depends(get_db)):
     try:
         return await get_one_user(id, db)

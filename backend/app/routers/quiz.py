@@ -22,7 +22,15 @@ from app.exceptions.quiz_exceptions import (
 )
 from app.models import User as User_model
 from app.oauth2 import get_current_user
-from app.schemas import FavouriteCreate, QuestionUpdate, Quiz, QuizCreate, QuizOut
+from app.schemas import (
+    FavouriteCreate,
+    QuestionOut,
+    QuestionUpdate,
+    Quiz,
+    QuizCreate,
+    QuizOut,
+    MessageResponse
+)
 from app.services.quiz_services import (
     add_to_favourites,
     get_all_quizzes,
@@ -39,7 +47,7 @@ from app.services.quiz_services import (
 router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
 
-@router.get("", response_model=List[QuizOut])
+@router.get("", response_model=List[QuizOut], summary="Get all public quizzes")
 async def get_quizzes(
     db: AsyncSession = Depends(get_db),
     limit: int = 10,
@@ -49,7 +57,16 @@ async def get_quizzes(
     return await get_all_quizzes(db, limit, skip, search)
 
 
-@router.post("", status_code=status.HTTP_201_CREATED, response_model=Quiz)
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=Quiz,
+    summary="Create new quiz",
+    responses={
+        422: {"description": "Wrong file type"},
+        500: {"description": "Creating quiz error"},
+    },
+)
 async def create_quiz(
     file: UploadFile,
     title: str = Form(...),
@@ -71,7 +88,11 @@ async def create_quiz(
         )
 
 
-@router.get("/my_favourite_quizzes", response_model=List[QuizOut])
+@router.get(
+    "/my_favourite_quizzes",
+    response_model=List[QuizOut],
+    summary="Get quizzes marked as favourites",
+)
 async def my_favourite_quizzes(
     db: AsyncSession = Depends(get_db),
     current_user: User_model = Depends(get_current_user),
@@ -82,7 +103,9 @@ async def my_favourite_quizzes(
     return await get_my_favourite_quizzes(db, current_user, limit, skip, search)
 
 
-@router.get("/my_quizzes", response_model=List[QuizOut])
+@router.get(
+    "/my_quizzes", response_model=List[QuizOut], summary="Get quizzes created by user"
+)
 async def my_quizzes(
     db: AsyncSession = Depends(get_db),
     current_user: User_model = Depends(get_current_user),
@@ -93,7 +116,15 @@ async def my_quizzes(
     return await get_my_quizzes(db, current_user, limit, skip, search)
 
 
-@router.get("/play/{id}")
+@router.get(
+    "/play/{id}",
+    response_model=List[QuestionOut],
+    summary="Get all quiz quiestions",
+    responses={
+        403: {"description": "User not authorized to perform this action"},
+        404: {"description": "Not found"},
+    },
+)
 async def play_the_quiz(
     id: int,
     db: AsyncSession = Depends(get_db),
@@ -118,7 +149,12 @@ async def play_the_quiz(
         )
 
 
-@router.get("/{id}", response_model=QuizOut)
+@router.get(
+    "/{id}",
+    response_model=QuizOut,
+    summary="Get one quiz",
+    responses={404: {"description": "Quiz not found"}},
+)
 async def get_quiz(id: int, db: AsyncSession = Depends(get_db)):
     try:
         return await get_one_quiz(id, db)
@@ -129,7 +165,15 @@ async def get_quiz(id: int, db: AsyncSession = Depends(get_db)):
         )
 
 
-@router.delete("/{id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Remove users quiz",
+    responses={
+        403: {"description": "User not authorized to perform this action"},
+        404: {"description": "Quiz not found"},
+    },
+)
 async def delete_quiz(
     id: int,
     db: AsyncSession = Depends(get_db),
@@ -151,7 +195,11 @@ async def delete_quiz(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/{id}", response_model=Quiz)
+@router.put("/{id}", response_model=Quiz,
+    summary="Update quiz description values", responses={
+        403: {"description": "User not authorized to perform this action"},
+        404: {"description": "Quiz not found"},
+    },)
 async def update_quiz(
     id: int,
     updated_quiz: QuizCreate,
@@ -172,7 +220,11 @@ async def update_quiz(
         )
 
 
-@router.put("/{id}/questions", status_code=status.HTTP_200_OK)
+@router.put("/{id}/questions", response_model=MessageResponse, status_code=status.HTTP_200_OK,
+    summary="Update quiz questions", responses={
+        403: {"description": "User not authorized to perform this action"},
+        404: {"description": "Quiz not found"},
+    },)
 async def update_quiz_questions(
     id: int,
     questions: List[QuestionUpdate],
@@ -194,7 +246,9 @@ async def update_quiz_questions(
         )
 
 
-@router.post("/favourites", status_code=status.HTTP_201_CREATED)
+@router.post("/favourites", status_code=status.HTTP_201_CREATED, summary="Mark quiz as favourite", responses={
+        404: {"description": "Quiz not found"},
+        409: {"description": "User has already added this quiz to favourites"}})
 async def add_quiz_to_favourites(
     favourite: FavouriteCreate,
     db: AsyncSession = Depends(get_db),

@@ -10,7 +10,8 @@ from app.services.auth_services import get_user_for_loging
 router = APIRouter(tags=["Authentication"])
 
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=Token, summary="Log in",
+    responses={403: {"description": "Invalid credentials"}},)
 async def login(
     user_credentials: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),

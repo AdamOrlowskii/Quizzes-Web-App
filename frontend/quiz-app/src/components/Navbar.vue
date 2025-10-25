@@ -112,7 +112,7 @@ window.addEventListener('storage', checkAuth)
 
               <template v-else>
                 <RouterLink
-                  to="/login"
+                  to="/log in"
                   :class="[
                     isActiveLink('/login')
                       ? 'bg-purple-900'
