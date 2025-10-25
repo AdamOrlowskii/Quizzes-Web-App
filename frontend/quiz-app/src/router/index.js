@@ -28,6 +28,11 @@ const router = createRouter({
       component: QuizzesView,
     },
     {
+      path: '/quizzes/my_favourite_quizzes',
+      name: 'my-favourite-quizzes',
+      component: QuizzesView,
+    },
+    {
       path: '/quizzes/add',
       name: 'add-quiz',
       component: AddQuizView,

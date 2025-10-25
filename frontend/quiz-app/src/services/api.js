@@ -94,11 +94,12 @@ export const quizAPI = {
 
 // ===== FAVOURITES =====
 export const favouriteAPI = {
-  add: quizId => api.post('/favourites/', { quiz_id: quizId, dir: 1 }),
+  add: quizId => api.post('/quizzes/favourites', { quiz_id: quizId, dir: 1 }),
 
-  remove: quizId => api.post('/favourites/', { quiz_id: quizId, dir: 0 }),
+  remove: quizId => api.post('/quizzes/favourites', { quiz_id: quizId, dir: 0 }),
 
-  getAll: () => api.get('/favourites/'),
+  getMyFavourites: (limit = 100, skip = 0, search = '') =>
+    api.get('/quizzes/my_favourite_quizzes', { params: { limit, skip, search } }),
 }
 
 // ===== USERS =====

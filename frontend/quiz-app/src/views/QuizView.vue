@@ -5,6 +5,7 @@ import { reactive, onMounted, computed } from 'vue' // ✅ Dodaj computed
 import { useRoute, RouterLink, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { quizAPI } from '@/services/api'
+import { favouriteAPI } from '@/services/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,7 +16,25 @@ const state = reactive({
   quiz: {},
   questions: [],
   isLoading: true,
+  isFavourite: false,
 })
+
+const toggleFavourite = async () => {
+  try {
+    if (state.isFavourite) {
+      await favouriteAPI.remove(quizId)
+      state.isFavourite = false
+      toast.success('Removed from favourites')
+    } else {
+      await favouriteAPI.add(quizId)
+      state.isFavourite = true
+      toast.success('Added to favourites')
+    }
+  } catch (error) {
+    console.error('Error toggling favourite:', error)
+    toast.error('Failed to update favourites')
+  }
+}
 
 const isMyQuiz = computed(() => {
   return state.quiz.owner?.email === localStorage.getItem('userEmail')
@@ -72,6 +91,15 @@ onMounted(async () => {
     }
 
     state.quiz = quizData
+
+    try {
+      const favourites = await favouriteAPI.getMyFavourites()
+      state.isFavourite = favourites.data.some(
+        item => (item.Quiz?.id || item[0]?.id) === parseInt(quizId)
+      )
+    } catch (err) {
+      console.warn('Could not load favourites:', err)
+    }
 
     try {
       const questionsResponse = await quizAPI.getQuestions(quizId)
@@ -177,6 +205,13 @@ onMounted(async () => {
               <!-- Action Buttons -->
               <div class="flex gap-4">
                 <button
+                  @click="toggleFavourite"
+                  class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
+                >
+                  {{ state.isFavourite ? '⭐ Remove from Favourites' : '☆ Add to Favourites' }}
+                </button>
+
+                <button
                   @click="startQuiz"
                   class="flex-1 bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-6 rounded-lg transition duration-200"
                 >
@@ -193,7 +228,7 @@ onMounted(async () => {
             </div>
           </main>
 
-          <!-- Sidebar (bez zmian) -->
+          <!-- Sidebar -->
           <aside>
             <div class="bg-white p-6 rounded-lg shadow-md">
               <h3 class="text-xl font-bold mb-4">Quiz Statistics</h3>

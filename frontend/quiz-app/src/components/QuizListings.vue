@@ -1,7 +1,7 @@
 <script setup>
 import { RouterLink, useRoute } from 'vue-router'
 import QuizCard from '@/components/QuizCard.vue'
-import { reactive, defineProps, onMounted, watch } from 'vue'
+import { reactive, defineProps, onMounted, watch, computed } from 'vue'
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue'
 import { quizAPI } from '@/services/api'
 
@@ -18,6 +18,12 @@ defineProps({
 const state = reactive({
   quizzes: [],
   isLoading: true,
+})
+
+const pageTitle = computed(() => {
+  if (route.path === '/quizzes/my_quizzes') return 'My Quizzes'
+  if (route.path === '/quizzes/my_favourite_quizzes') return 'My Favourite Quizzes'
+  return 'Browse Quizzes'
 })
 
 const fetchQuizzes = async () => {
@@ -58,12 +64,13 @@ watch(
 <template>
   <section class="bg-purple-50 px-4 py-10">
     <div class="container-xl lg:container m-auto">
+      <!-- ✅ Użyj computed pageTitle -->
       <h2 class="text-3xl font-bold text-purple-500 mb-6 text-center">
-        {{ route.path === '/quizzes/my_quizzes' ? 'My Quizzes' : 'Browse Quizzes' }}
+        {{ pageTitle }}
       </h2>
 
       <div v-if="state.isLoading" class="text-center text-gray-500 py-6">
-        <PulseLoader />
+        <PulseLoader :color="'#9333ea'" />
       </div>
 
       <div v-else-if="state.quizzes.length === 0" class="text-center text-gray-500 py-6">
