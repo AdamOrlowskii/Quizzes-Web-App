@@ -24,6 +24,7 @@ from app.models import User as User_model
 from app.oauth2 import get_current_user
 from app.schemas import FavouriteCreate, QuestionUpdate, Quiz, QuizCreate, QuizOut
 from app.services.quiz_services import (
+    add_to_favourites,
     get_all_quizzes,
     get_my_favourite_quizzes,
     get_my_quizzes,
@@ -200,7 +201,7 @@ async def add_quiz_to_favourites(
     current_user: User_model = Depends(get_current_user),
 ):
     try:
-        return await add_quiz_to_favourites(favourite, db, current_user)
+        return await add_to_favourites(favourite, db, current_user)
     except QuizNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -209,5 +210,5 @@ async def add_quiz_to_favourites(
     except ActionAlreadyDoneException:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"User {current_user.id} has already added this quiz to favourites {favourite.quiz_id}",
+            detail=f"User {current_user.id} has already added this quiz({favourite.quiz_id}) to favourites ",
         )

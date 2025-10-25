@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
+from psycopg2 import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.exceptions.user_exceptions import UserCreatingException, UserNotFoundException
+from app.exceptions.user_exceptions import UserNotFoundException
 from app.models import User
 from app.oauth2 import get_current_user
 from app.schemas import UserCreate, UserOut
@@ -15,10 +16,12 @@ router = APIRouter(prefix="/users", tags=["Users"])
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     try:
         return await create_new_user(user, db)
-    except UserCreatingException:
+    except IntegrityError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User already exists")
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="User creating error",
+            detail=f"User creation failed: {e}",
         )
 
 

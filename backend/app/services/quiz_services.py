@@ -29,9 +29,10 @@ MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_c
 
 async def get_quiz_by_id(id, db) -> Quiz_model:
     result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
-    if not result:
+    quiz = result.scalar_one_or_none()
+    if not quiz:
         raise QuizNotFoundException()
-    return result.scalar_one_or_none()
+    return quiz
 
 
 async def get_all_quizzes(
@@ -289,7 +290,7 @@ async def add_to_favourites(
         db.add(new_favourite)
         await db.commit()
         await db.refresh(new_favourite)
-        return {"message": "successfully added to favourites"}
+        return {"message": "Successfully added to favourites"}
     else:
         if not found_favourite:
             raise QuizNotFoundException()
@@ -297,4 +298,4 @@ async def add_to_favourites(
         await db.delete(found_favourite)
         await db.commit()
 
-        return {"message": "successfully deleted from favourites"}
+        return {"message": "Successfully deleted from favourites"}
