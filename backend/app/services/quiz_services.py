@@ -1,18 +1,24 @@
 from typing import List, Optional
 
 from app.config import settings
+from app.exceptions.quiz_exceptions import (
+    ActionAlreadyDoneException,
+    CreatingQuizException,
+    QuestionsNotFoundException,
+    QuizNotFoundException,
+    UserNotAuthorizedException,
+    WrongFileTypeException,
+)
 from app.llm import send_text_to_llm
 from app.models import Favourite as Favourite_model
 from app.models import Question as Question_model
 from app.models import Quiz as Quiz_model
 from app.models import User as User_model
 from app.pdf_parser.parser import PDFParser
-from app.schemas import QuizCreate, QuestionUpdate
+from app.schemas import FavouriteCreate, QuestionUpdate, QuizCreate
 from app.utils import split_text
 from fastapi import (
-    HTTPException,
     UploadFile,
-    status,
 )
 from sqlalchemy import Result, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,9 +28,9 @@ MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_c
 
 
 async def get_quiz_by_id(id, db) -> Quiz_model:
-    result = await db.execute(
-        select(Quiz_model).where(Quiz_model.id == id)
-    )
+    result = await db.execute(select(Quiz_model).where(Quiz_model.id == id))
+    if not result:
+        raise QuizNotFoundException()
     return result.scalar_one_or_none()
 
 
@@ -43,7 +49,7 @@ async def get_all_quizzes(
 
     if search:
         query = query.where(Quiz_model.title.contains(search))
-    
+
     query = query.limit(limit).offset(skip)
 
     result = await db.execute(query)
@@ -71,10 +77,7 @@ async def insert_new_quiz(
         else:
             print("No text extracted")
     else:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Could not extract text from PDF. Try a different file",
-        )
+        raise WrongFileTypeException()
 
     new_quiz = Quiz_model(
         title=title, content=text_content, owner_id=current_user.id, published=published
@@ -99,7 +102,10 @@ async def insert_new_quiz(
     await db.commit()
     await db.refresh(new_question_to_database)
 
-    return new_quiz
+    try:
+        return new_quiz
+    except Exception:
+        raise CreatingQuizException()
 
 
 async def get_my_favourite_quizzes(
@@ -164,10 +170,7 @@ async def get_one_quiz(id, db) -> Result:
     quiz = result.first()
 
     if not quiz:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Quiz with id: {id} was not found",
-        )
+        raise QuizNotFoundException()
 
     return quiz
 
@@ -175,18 +178,9 @@ async def get_one_quiz(id, db) -> Result:
 async def get_questions(id, db, current_user):
     quiz = await get_quiz_by_id(id, db)
 
-    if not quiz:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Quiz with id: {id} was not found",
-        )
-
     if not quiz.published:
         if quiz.owner_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Not authorized to perform requested action",
-            )
+            raise UserNotAuthorizedException()
 
     result = await db.execute(
         select(Question_model).where(Question_model.quiz_id == id)
@@ -194,10 +188,7 @@ async def get_questions(id, db, current_user):
     questions = result.scalars().all()
 
     if not questions:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No questions found for quiz with id: {id}",
-        )
+        raise QuestionsNotFoundException()
     return questions
 
 
@@ -205,16 +196,10 @@ async def remove_quiz(id, db, current_user):
     quiz = await get_quiz_by_id(id, db)
 
     if quiz is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Quiz with id: {id} does not exist",
-        )
+        raise QuizNotFoundException()
 
     if quiz.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to perform requested action",
-        )
+        raise UserNotAuthorizedException()
 
     await db.delete(quiz)
     await db.commit()
@@ -229,16 +214,10 @@ async def update_quiz_values(
     quiz = await get_quiz_by_id(id, db)
 
     if quiz is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Quiz with id: {id} does not exist",
-        )
+        raise QuizNotFoundException()
 
     if quiz.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to perform requested action",
-        )
+        raise UserNotAuthorizedException()
 
     for key, value in updated_quiz.dict().items():
         setattr(quiz, key, value)
@@ -247,28 +226,22 @@ async def update_quiz_values(
     await db.refresh(quiz)
     return quiz
 
+
 async def update_questions(
     id: int,
     questions: List[QuestionUpdate],
     db: AsyncSession,
     current_user: User_model,
 ):
-    
     quiz = await get_quiz_by_id(id, db)
     if not quiz:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Quiz with id: {id} was not found",
-        )
-    
+        raise QuizNotFoundException()
+
     if quiz.owner_id != current_user.id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to perform requested action",
-        )
-    
+        raise UserNotAuthorizedException()
+
     await db.execute(delete(Question_model).where(Question_model.quiz_id == id))
-    
+
     for question_data in questions:
         new_question = Question_model(
             quiz_id=id,
@@ -277,7 +250,51 @@ async def update_questions(
             correct_answer=question_data.correct_answer,
         )
         db.add(new_question)
-    
+
     await db.commit()
-    
+
     return {"message": f"Updated {len(questions)} questions"}
+
+
+async def add_to_favourites(
+    favourite: FavouriteCreate,
+    db: AsyncSession,
+    current_user: User_model,
+):
+    result = await db.execute(
+        select(Quiz_model).where(Quiz_model.id == favourite.quiz_id)
+    )
+
+    quiz = result.scalar_one_or_none()
+
+    if not quiz:
+        raise QuizNotFoundException()
+
+    result = await db.execute(
+        select(Favourite_model).where(
+            Favourite_model.quiz_id == favourite.quiz_id,
+            Favourite_model.user_id == current_user.id,
+        )
+    )
+
+    found_favourite = result.scalar_one_or_none()
+
+    if favourite.dir == 1:
+        if found_favourite:
+            raise ActionAlreadyDoneException()
+
+        new_favourite = Favourite_model(
+            quiz_id=favourite.quiz_id, user_id=current_user.id
+        )
+        db.add(new_favourite)
+        await db.commit()
+        await db.refresh(new_favourite)
+        return {"message": "successfully added to favourites"}
+    else:
+        if not found_favourite:
+            raise QuizNotFoundException()
+
+        await db.delete(found_favourite)
+        await db.commit()
+
+        return {"message": "successfully deleted from favourites"}

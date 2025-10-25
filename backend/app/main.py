@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
-from app.routers import auth, favourite, quiz, user
+from app.routers import auth, quiz, user
 
 print(settings.database_username)
 # models.Base.metadata.create_all(bind=engine)
@@ -27,7 +27,6 @@ app.add_middleware(
 app.include_router(quiz.router)
 app.include_router(user.router)
 app.include_router(auth.router)
-app.include_router(favourite.router)
 
 
 @app.get("/")
