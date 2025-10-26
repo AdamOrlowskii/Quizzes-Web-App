@@ -64,7 +64,6 @@ watch(
 <template>
   <section class="bg-purple-50 px-4 py-10">
     <div class="container-xl lg:container m-auto">
-      <!-- ✅ Użyj computed pageTitle -->
       <h2 class="text-3xl font-bold text-purple-500 mb-6 text-center">
         {{ pageTitle }}
       </h2>

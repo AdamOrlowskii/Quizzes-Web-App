@@ -9,7 +9,7 @@ from app.exceptions.quiz_exceptions import (
     UserNotAuthorizedException,
     WrongFileTypeException,
 )
-from app.llm import send_text_to_llm
+from app.services.llm_service import send_text_to_llm
 from app.models import Favourite as Favourite_model
 from app.models import Question as Question_model
 from app.models import Quiz as Quiz_model
@@ -89,21 +89,27 @@ async def insert_new_quiz(
 
     text_in_chunks = split_text(text_content, MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK)
 
-    quiz_questions = send_text_to_llm(text_in_chunks)
-
-    for question in quiz_questions:
-        new_question_to_database = Question_model(
-            quiz_id=new_quiz.id,
-            question_text=question["Q"],
-            answers=question["A"],
-            correct_answer=question["C"],
-        )
-        db.add(new_question_to_database)
-
-    await db.commit()
-    await db.refresh(new_question_to_database)
-
     try:
+        quiz_questions = send_text_to_llm(text_in_chunks)
+        
+        if not quiz_questions:
+            print("Warning: No questions generated, using fallback")
+            # Opcjonalnie: dodaj fallback pytania lub rzuć wyjątek
+            raise Exception("No questions generated from text")
+
+
+        for question in quiz_questions:
+            new_question_to_database = Question_model(
+                quiz_id=new_quiz.id,
+                question_text=question["Q"],
+                answers=question["A"],
+                correct_answer=question["C"],
+            )
+            db.add(new_question_to_database)
+
+        await db.commit()
+        await db.refresh(new_question_to_database)
+
         return new_quiz
     except Exception:
         raise CreatingQuizException()

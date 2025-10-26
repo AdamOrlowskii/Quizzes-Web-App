@@ -39,7 +39,6 @@ const nextQuestion = () => {
     return
   }
 
-  // Zapisz odpowiedź
   state.userAnswers.push({
     questionId: currentQuestion.value.id,
     selectedAnswer: state.selectedAnswer,
@@ -47,15 +46,12 @@ const nextQuestion = () => {
     isCorrect: state.selectedAnswer === currentQuestion.value.correct_answer,
   })
 
-  // Policz punkty
   if (state.selectedAnswer === currentQuestion.value.correct_answer) {
     state.score++
   }
 
-  // Reset wyboru
   state.selectedAnswer = null
 
-  // Następne pytanie lub wyniki
   if (state.currentQuestionIndex < state.questions.length - 1) {
     state.currentQuestionIndex++
   } else {
@@ -77,11 +73,9 @@ const goBack = () => {
 
 onMounted(async () => {
   try {
-    // Pobierz quiz
     const quizResponse = await quizAPI.getById(quizId)
     state.quiz = quizResponse.data.Quiz || quizResponse.data[0] || quizResponse.data
 
-    // Pobierz pytania
     const questionsResponse = await quizAPI.getQuestions(quizId)
     state.questions = questionsResponse.data
 
@@ -184,12 +178,12 @@ onMounted(async () => {
           <p class="text-gray-600 mt-4">
             {{
               state.score === state.questions.length
-                ? 'Perfect score! 🌟'
+                ? 'Perfect score!'
                 : state.score >= state.questions.length * 0.7
-                  ? 'Great job! 👏'
+                  ? 'Great job!'
                   : state.score >= state.questions.length * 0.5
-                    ? 'Good effort! 💪'
-                    : 'Keep practicing! 📚'
+                    ? 'Good effort!'
+                    : 'Keep practicing!'
             }}
           </p>
         </div>

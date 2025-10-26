@@ -1,7 +1,7 @@
 <script setup>
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue'
 import BackButton from '@/components/BackButton.vue'
-import { reactive, onMounted, computed } from 'vue' // ✅ Dodaj computed
+import { reactive, onMounted, computed } from 'vue'
 import { useRoute, RouterLink, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { quizAPI } from '@/services/api'

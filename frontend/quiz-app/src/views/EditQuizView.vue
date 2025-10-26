@@ -11,7 +11,7 @@ const toast = useToast()
 
 const form = reactive({
   title: '',
-  published: true, // ✅ Dodaj to
+  published: true,
   questions: [],
 })
 
@@ -67,7 +67,7 @@ const handleSubmit = async () => {
     await quizAPI.update(quizId, {
       title: form.title,
       content: state.quiz.content,
-      published: form.published, // ✅ Użyj form.published
+      published: form.published,
     })
 
     if (form.questions.length > 0) {
