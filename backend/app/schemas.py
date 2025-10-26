@@ -44,6 +44,7 @@ class QuizOut(BaseModel):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    is_admin: bool = False
 
 
 class UserLogin(BaseModel):

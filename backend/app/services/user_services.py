@@ -16,6 +16,11 @@ async def get_one_user(id: int, db: AsyncSession) -> User:
 
     return user
 
+async def get_users(db: AsyncSession) -> User:
+    result = await db.execute(select(User))
+    users = result.scalars()
+
+    return users
 
 async def create_new_user(user: UserCreate, db: AsyncSession) -> User:
     try:
@@ -37,10 +42,10 @@ async def create_new_user(user: UserCreate, db: AsyncSession) -> User:
         raise
 
 
-async def delete_account(db: AsyncSession, current_user: User):
-    result = await db.execute(select(User).where(User.id == current_user.id))
+async def delete_account(db: AsyncSession, user: User):
+    result = await db.execute(select(User).where(User.id == user.id))
     user = result.scalar_one_or_none()
-
+ 
     if not user:
         raise UserNotFoundException()
 
