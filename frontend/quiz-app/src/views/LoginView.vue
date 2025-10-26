@@ -15,6 +15,11 @@ const handleLogin = async () => {
   isLoading.value = true
 
   try {
+    const loginResponse = await authAPI.login(form.email, form.password)
+    localStorage.setItem('userEmail', form.email)
+
+    localStorage.setItem('isAdmin', loginResponse.data.is_admin ? 'true' : 'false')
+
     await authAPI.login(form.email, form.password)
     localStorage.setItem('userEmail', form.email)
     toast.success('Login successful!')

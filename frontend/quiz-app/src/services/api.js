@@ -109,4 +109,16 @@ export const userAPI = {
   getMe: () => api.get('/users/me'),
 }
 
+// ===== ADMIN =====
+export const adminAPI = {
+  getAllUsers: () => api.get('/users'),
+
+  deleteUser: userId => api.delete(`/users/${userId}`),
+
+  getAllQuizzes: (limit = 1000, skip = 0) =>
+    api.get('/quizzes', { params: { limit, skip, search: '' } }),
+
+  deleteQuiz: quizId => api.delete(`/quizzes/${quizId}`),
+}
+
 export default api

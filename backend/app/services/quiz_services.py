@@ -199,7 +199,7 @@ async def remove_quiz(id, db, current_user):
     if quiz is None:
         raise QuizNotFoundException()
 
-    if quiz.owner_id != current_user.id:
+    if quiz.owner_id != current_user.id and not current_user.is_admin:
         raise UserNotAuthorizedException()
 
     await db.delete(quiz)

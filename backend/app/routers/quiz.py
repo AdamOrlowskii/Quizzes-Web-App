@@ -168,7 +168,7 @@ async def get_quiz(id: int, db: AsyncSession = Depends(get_db)):
 @router.delete(
     "/{id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    summary="Remove users quiz",
+    summary="Remove quiz",
     responses={
         403: {"description": "User not authorized to perform this action"},
         404: {"description": "Quiz not found"},

@@ -17,6 +17,7 @@ class QuizCreate(QuizBase):
 class UserOut(BaseModel):
     id: int
     email: EmailStr
+    is_admin: bool
     created_at: datetime
 
     class Config:
@@ -55,6 +56,7 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    is_admin: bool
 
 
 class TokenData(BaseModel):

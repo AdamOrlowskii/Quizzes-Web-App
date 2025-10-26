@@ -14,8 +14,11 @@ const isActiveLink = routePath => {
   return route.path === routePath
 }
 
+const isAdmin = ref(false)
+
 const checkAuth = () => {
   isLoggedIn.value = !!localStorage.getItem('token')
+  isAdmin.value = localStorage.getItem('isAdmin') === 'true'
 }
 
 const handleLogout = () => {
@@ -41,8 +44,20 @@ window.addEventListener('storage', checkAuth)
           <RouterLink class="flex flex-shrink-0 items-center mr-4" to="/">
             <span class="hidden md:block text-white text-2xl font-bold ml-2">Quiz App</span>
           </RouterLink>
+
           <div class="md:ml-auto">
             <div class="flex space-x-2">
+              <RouterLink
+                v-if="isAdmin"
+                to="/admin"
+                :class="[
+                  isActiveLink('/admin') ? 'bg-purple-900' : 'hover:bg-purple-900 hover:text-white',
+                  'text-white px-3 py-2 rounded-md',
+                ]"
+              >
+                Administrators Panel
+              </RouterLink>
+
               <RouterLink
                 to="/"
                 :class="[
@@ -112,7 +127,7 @@ window.addEventListener('storage', checkAuth)
 
               <template v-else>
                 <RouterLink
-                  to="/log in"
+                  to="/login"
                   :class="[
                     isActiveLink('/login')
                       ? 'bg-purple-900'
@@ -120,7 +135,7 @@ window.addEventListener('storage', checkAuth)
                     'text-white px-3 py-2 rounded-md',
                   ]"
                 >
-                  Login
+                  Log In
                 </RouterLink>
 
                 <RouterLink

@@ -8,6 +8,7 @@ import EditQuizView from '@/views/EditQuizView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SignUpView from '@/views/SignUpView.vue'
 import PlayQuizView from '@/views/PlayQuizView.vue'
+import AdminPanelView from '@/views/AdminPanelView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -61,6 +62,12 @@ const router = createRouter({
       path: '/signup',
       name: 'signup',
       component: SignUpView,
+    },
+    {
+      path: '/admin',
+      name: 'admin',
+      component: AdminPanelView,
+      meta: { requiresAuth: true },
     },
     {
       path: '/:catchAll(.*)',
