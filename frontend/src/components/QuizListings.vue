@@ -151,7 +151,7 @@ watch(
   <section v-if="showButton" class="m-auto max-w-lg my-10 px-6">
     <RouterLink
       to="/quizzes"
-      class="block bg-purple-900 text-white text-center py-4 px-6 rounded-xl hover:bg-gray-700"
+      class="block bg-purple-600 text-white text-center py-4 px-6 rounded-xl hover:bg-gray-700"
     >
       View All Quizzes
     </RouterLink>

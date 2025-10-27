@@ -48,7 +48,7 @@ window.addEventListener('storage', checkAuth)
           <div class="md:ml-auto">
             <div class="flex space-x-2">
               <RouterLink
-                v-if="isAdmin"
+                v-if="isLoggedIn && isAdmin"
                 to="/admin"
                 :class="[
                   isActiveLink('/admin') ? 'bg-purple-900' : 'hover:bg-purple-900 hover:text-white',
