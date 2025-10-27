@@ -1,7 +1,9 @@
 from datetime import datetime
-from typing import Dict, Literal, Optional
+from typing import Dict, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict
+
+from app.schemas.user_schemas import UserOut
 
 
 class QuizBase(BaseModel):
@@ -12,16 +14,6 @@ class QuizBase(BaseModel):
 
 class QuizCreate(QuizBase):
     pass
-
-
-class UserOut(BaseModel):
-    id: int
-    email: EmailStr
-    is_admin: bool
-    created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class Quiz(QuizBase):
@@ -40,27 +32,6 @@ class QuizOut(BaseModel):
 
     class Config:
         orm_mode = True
-
-
-class UserCreate(BaseModel):
-    email: EmailStr
-    password: str
-    is_admin: bool = False
-
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
-
-
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    is_admin: bool
-
-
-class TokenData(BaseModel):
-    id: Optional[str] = None
 
 
 class FavouriteCreate(BaseModel):

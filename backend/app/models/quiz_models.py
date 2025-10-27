@@ -3,8 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql.expression import text
 from sqlalchemy.sql.sqltypes import TIMESTAMP
 
-from app.database import Base
-
+from app.settings.database import Base
 
 class Quiz(Base):
     __tablename__ = "quizzes"
@@ -23,19 +22,6 @@ class Quiz(Base):
 
     owner = relationship("User", back_populates="quizzes")
     questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan")
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, nullable=False)
-    email = Column(String, nullable=False, unique=True)
-    password = Column(String, nullable=False)
-    is_admin = Column(Boolean, default=False)
-    created_at = Column(
-        TIMESTAMP(timezone=True), nullable=False, server_default=text("now()")
-    )
-    quizzes = relationship("Quiz", back_populates="owner", cascade="all, delete-orphan")
 
 
 class Favourite(Base):

@@ -2,7 +2,7 @@ import json
 from typing import List
 
 import openai
-from app.config import settings
+from app.settings.config import settings
 
 CLARIN_API_KEY = settings.clarin_api_key
 QUESTIONS_PER_CHUNK = settings.questions_per_chunk

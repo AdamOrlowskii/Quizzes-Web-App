@@ -1,7 +1,7 @@
 from psycopg2 import IntegrityError
 from app.exceptions.user_exceptions import UserCreatingException, UserNotFoundException
-from app.models import User
-from app.schemas import UserCreate
+from app.models.user_models import User
+from app.schemas.user_schemas import UserCreate
 from app.utils import hash
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession

@@ -1,4 +1,4 @@
-from app.models import User
+from app.models.user_models import User
 from app.utils import verify
 from fastapi import HTTPException, status
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm

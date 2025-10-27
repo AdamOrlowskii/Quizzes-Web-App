@@ -4,12 +4,12 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from psycopg2 import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
-from app.dependencies import require_admin
+from app.settings.database import get_db
+from app.utils import require_admin
 from app.exceptions.user_exceptions import UserNotFoundException
-from app.models import User
+from app.models.user_models import User
 from app.oauth2 import get_current_user
-from app.schemas import UserCreate, UserOut
+from app.schemas.user_schemas import UserCreate, UserOut
 from app.services.user_services import (
     create_new_user,
     delete_account,

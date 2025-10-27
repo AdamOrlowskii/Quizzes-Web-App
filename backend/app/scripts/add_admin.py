@@ -5,10 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-from app.config import settings
-from app.database import SQLALCHEMY_DATABASE_URL
+from app.settings.config import settings
+from app.settings.database import SQLALCHEMY_DATABASE_URL
 from app.exceptions.user_exceptions import UserCreatingException
-from app.models import User
+from app.models.user_models import User
 from app.utils import hash
 
 DEFAULT_ADMIN_EMAIL = settings.default_admin_email

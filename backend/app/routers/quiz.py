@@ -11,7 +11,6 @@ from fastapi import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
 from app.exceptions.quiz_exceptions import (
     ActionAlreadyDoneException,
     CreatingQuizException,
@@ -20,16 +19,16 @@ from app.exceptions.quiz_exceptions import (
     UserNotAuthorizedException,
     WrongFileTypeException,
 )
-from app.models import User as User_model
+from app.models.user_models import User as User_model
 from app.oauth2 import get_current_user
-from app.schemas import (
+from app.schemas.quiz_schemas import (
     FavouriteCreate,
+    MessageResponse,
     QuestionOut,
     QuestionUpdate,
     Quiz,
     QuizCreate,
     QuizOut,
-    MessageResponse
 )
 from app.services.quiz_services import (
     add_to_favourites,
@@ -43,6 +42,7 @@ from app.services.quiz_services import (
     update_questions,
     update_quiz_values,
 )
+from app.settings.database import get_db
 
 router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
@@ -195,11 +195,15 @@ async def delete_quiz(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.put("/{id}", response_model=Quiz,
-    summary="Update quiz description values", responses={
+@router.put(
+    "/{id}",
+    response_model=Quiz,
+    summary="Update quiz description values",
+    responses={
         403: {"description": "User not authorized to perform this action"},
         404: {"description": "Quiz not found"},
-    },)
+    },
+)
 async def update_quiz(
     id: int,
     updated_quiz: QuizCreate,
@@ -220,11 +224,16 @@ async def update_quiz(
         )
 
 
-@router.put("/{id}/questions", response_model=MessageResponse, status_code=status.HTTP_200_OK,
-    summary="Update quiz questions", responses={
+@router.put(
+    "/{id}/questions",
+    response_model=MessageResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update quiz questions",
+    responses={
         403: {"description": "User not authorized to perform this action"},
         404: {"description": "Quiz not found"},
-    },)
+    },
+)
 async def update_quiz_questions(
     id: int,
     questions: List[QuestionUpdate],
@@ -246,9 +255,15 @@ async def update_quiz_questions(
         )
 
 
-@router.post("/favourites", status_code=status.HTTP_201_CREATED, summary="Mark quiz as favourite", responses={
+@router.post(
+    "/favourites",
+    status_code=status.HTTP_201_CREATED,
+    summary="Mark quiz as favourite",
+    responses={
         404: {"description": "Quiz not found"},
-        409: {"description": "User has already added this quiz to favourites"}})
+        409: {"description": "User has already added this quiz to favourites"},
+    },
+)
 async def add_quiz_to_favourites(
     favourite: FavouriteCreate,
     db: AsyncSession = Depends(get_db),

@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from app.config import settings
+from app.settings.config import settings
 from app.exceptions.quiz_exceptions import (
     ActionAlreadyDoneException,
     CreatingQuizException,
@@ -10,12 +10,12 @@ from app.exceptions.quiz_exceptions import (
     WrongFileTypeException,
 )
 from app.services.llm_service import send_text_to_llm
-from app.models import Favourite as Favourite_model
-from app.models import Question as Question_model
-from app.models import Quiz as Quiz_model
-from app.models import User as User_model
+from app.models.quiz_models import Favourite as Favourite_model
+from app.models.quiz_models import Question as Question_model
+from app.models.quiz_models import Quiz as Quiz_model
+from app.models.user_models import User as User_model
 from app.pdf_parser.parser import PDFParser
-from app.schemas import FavouriteCreate, QuestionUpdate, QuizCreate
+from app.schemas.quiz_schemas import FavouriteCreate, QuestionUpdate, QuizCreate
 from app.utils import split_text
 from fastapi import (
     UploadFile,
