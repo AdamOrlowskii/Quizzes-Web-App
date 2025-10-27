@@ -21,8 +21,3 @@ app.add_middleware(
 app.include_router(quiz.router)
 app.include_router(user.router)
 app.include_router(auth.router)
-
-
-@app.get("/")
-def root():
-    return {"message": "Hello World"}

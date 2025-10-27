@@ -39,7 +39,7 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <section class="bg-blue-50 min-h-screen flex items-center justify-center">
+  <section class="bg-purple-50 min-h-screen flex items-center justify-center">
     <div class="container max-w-md">
       <div class="bg-white rounded-lg shadow-lg p-8">
         <!-- Header -->
