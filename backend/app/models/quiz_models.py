@@ -5,6 +5,7 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 
 from app.settings.database import Base
 
+
 class Quiz(Base):
     __tablename__ = "quizzes"
 

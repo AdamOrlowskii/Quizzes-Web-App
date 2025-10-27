@@ -1,16 +1,10 @@
-# uvicorn app.main:app --reload --port 7000
-
-# alembic revision --autogenerate -m ""
-# alembic upgrade head
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.settings.config import settings
 from app.routers import auth, quiz, user
+from app.settings.config import settings
 
 print(settings.database_username)
-# models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 

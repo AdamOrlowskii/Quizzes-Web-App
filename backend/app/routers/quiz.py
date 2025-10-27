@@ -24,6 +24,7 @@ from app.oauth2 import get_current_user
 from app.schemas.quiz_schemas import (
     FavouriteCreate,
     MessageResponse,
+    PaginatedQuizResponse,
     QuestionOut,
     QuestionUpdate,
     Quiz,
@@ -47,7 +48,7 @@ from app.settings.database import get_db
 router = APIRouter(prefix="/quizzes", tags=["Quizzes"])
 
 
-@router.get("", response_model=List[QuizOut], summary="Get all public quizzes")
+@router.get("", response_model=PaginatedQuizResponse, summary="Get all public quizzes")
 async def get_quizzes(
     db: AsyncSession = Depends(get_db),
     limit: int = 10,
@@ -90,7 +91,7 @@ async def create_quiz(
 
 @router.get(
     "/my_favourite_quizzes",
-    response_model=List[QuizOut],
+    response_model=PaginatedQuizResponse,
     summary="Get quizzes marked as favourites",
 )
 async def my_favourite_quizzes(
@@ -104,7 +105,9 @@ async def my_favourite_quizzes(
 
 
 @router.get(
-    "/my_quizzes", response_model=List[QuizOut], summary="Get quizzes created by user"
+    "/my_quizzes",
+    response_model=PaginatedQuizResponse,
+    summary="Get quizzes created by user",
 )
 async def my_quizzes(
     db: AsyncSession = Depends(get_db),

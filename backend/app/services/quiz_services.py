@@ -1,6 +1,12 @@
 from typing import List, Optional
 
-from app.settings.config import settings
+from fastapi import (
+    UploadFile,
+)
+from sqlalchemy import Result, delete, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from app.exceptions.quiz_exceptions import (
     ActionAlreadyDoneException,
     CreatingQuizException,
@@ -9,20 +15,15 @@ from app.exceptions.quiz_exceptions import (
     UserNotAuthorizedException,
     WrongFileTypeException,
 )
-from app.services.llm_service import send_text_to_llm
 from app.models.quiz_models import Favourite as Favourite_model
 from app.models.quiz_models import Question as Question_model
 from app.models.quiz_models import Quiz as Quiz_model
 from app.models.user_models import User as User_model
 from app.pdf_parser.parser import PDFParser
 from app.schemas.quiz_schemas import FavouriteCreate, QuestionUpdate, QuizCreate
+from app.services.llm_service import send_text_to_llm
+from app.settings.config import settings
 from app.utils import split_text
-from fastapi import (
-    UploadFile,
-)
-from sqlalchemy import Result, delete, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK = settings.max_number_of_sentences_in_one_chunk
 
@@ -38,6 +39,14 @@ async def get_quiz_by_id(id, db) -> Quiz_model:
 async def get_all_quizzes(
     db: AsyncSession, limit: int, skip: int, search: Optional[str]
 ):
+    
+    count_query = select(func.count(Quiz_model.id)).where(Quiz_model.published)
+    if search:
+        count_query = count_query.where(Quiz_model.title.ilike(f"%{search}%"))
+    
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+
     query = (
         select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
         .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
@@ -49,12 +58,15 @@ async def get_all_quizzes(
     )
 
     if search:
-        query = query.where(Quiz_model.title.contains(search))
-
-    query = query.limit(limit).offset(skip)
+        query = query.where(Quiz_model.title.ilike(f"%{search}%"))
 
     result = await db.execute(query)
-    return result
+    quizzes = result.all()
+    
+    return {
+        "items": quizzes,
+        "total": total
+    }
 
 
 async def insert_new_quiz(
@@ -115,53 +127,68 @@ async def insert_new_quiz(
         raise CreatingQuizException()
 
 
-async def get_my_favourite_quizzes(
-    db: AsyncSession,
-    current_user: User_model,
-    limit: int,
-    skip: int,
-    search: Optional[str],
-):
+async def get_my_favourite_quizzes(db: AsyncSession, current_user: User_model, limit: int, skip: int, search: str):
+    count_query = (
+        select(func.count(Quiz_model.id))
+        .join(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
+        .where(Favourite_model.user_id == current_user.id)
+    )
+    if search:
+        count_query = count_query.where(Quiz_model.title.ilike(f"%{search}%"))
+    
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+    
+    query = (
+        select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
+        .join(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
+        .where(Favourite_model.user_id == current_user.id)
+        .options(selectinload(Quiz_model.owner))
+        .group_by(Quiz_model.id)
+        .limit(limit)
+        .offset(skip)
+    )
+    
+    if search:
+        query = query.where(Quiz_model.title.ilike(f"%{search}%"))
+    
+    result = await db.execute(query)
+    quizzes = result.all()
+    
+    return {
+        "items": quizzes,
+        "total": total
+    }
+
+
+async def get_my_quizzes(db: AsyncSession, current_user: User_model, limit: int, skip: int, search: str):
+    count_query = select(func.count(Quiz_model.id)).where(Quiz_model.owner_id == current_user.id)
+    if search:
+        count_query = count_query.where(Quiz_model.title.ilike(f"%{search}%"))
+    
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+    
     query = (
         select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
         .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
         .options(selectinload(Quiz_model.owner))
         .group_by(Quiz_model.id)
-        .where(
-            Favourite_model.user_id == current_user.id,
-            Quiz_model.title.contains(search),
-        )
+        .where(Quiz_model.owner_id == current_user.id)
         .limit(limit)
         .offset(skip)
     )
-
+    
+    if search:
+        query = query.where(Quiz_model.title.ilike(f"%{search}%"))
+    
     result = await db.execute(query)
-    return result
-
-
-async def get_my_quizzes(
-    db: AsyncSession,
-    current_user: User_model,
-    limit: int,
-    skip: int,
-    search: Optional[str],
-) -> Result:
-    query = (
-        select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
-        .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
-        .options(selectinload(Quiz_model.owner))
-        .group_by(Quiz_model.id)
-        .where(
-            Quiz_model.owner_id == current_user.id,
-            Quiz_model.title.contains(search),
-        )
-        .limit(limit)
-        .offset(skip)
-    )
-
-    result = await db.execute(query)
-
-    return result
+    quizzes = result.all()
+    
+    return {
+        "items": quizzes,
+        "total": total
+    }
 
 
 async def get_one_quiz(id, db) -> Result:

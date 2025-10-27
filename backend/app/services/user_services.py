@@ -1,10 +1,11 @@
 from psycopg2 import IntegrityError
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.exceptions.user_exceptions import UserCreatingException, UserNotFoundException
 from app.models.user_models import User
 from app.schemas.user_schemas import UserCreate
 from app.utils import hash
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 async def get_one_user(id: int, db: AsyncSession) -> User:

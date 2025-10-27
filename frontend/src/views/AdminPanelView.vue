@@ -37,8 +37,9 @@ const loadUsers = async () => {
 const loadQuizzes = async () => {
   state.isLoadingQuizzes = true
   try {
-    const response = await adminAPI.getAllQuizzes()
-    state.quizzes = response.data
+    const response = await adminAPI.getAllQuizzes(1000, 0)
+
+    state.quizzes = response.data.items
   } catch (error) {
     console.error('Error loading quizzes:', error)
     toast.error('Failed to load quizzes')
@@ -170,7 +171,7 @@ onMounted(() => {
                     @click="deleteUser(user.id, user.email)"
                     class="text-red-600 hover:text-red-800 font-medium"
                   >
-                    🗑️ Delete
+                    Delete
                   </button>
                   <span v-else class="text-gray-400 text-xs">Protected</span>
                 </td>

@@ -178,7 +178,7 @@ web_app/
 
 ## License
 
-Project created for Bachelor's thesis purposes.
+Project created for Engineering's thesis purposes.
 
 ## Author
 

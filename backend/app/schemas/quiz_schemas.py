@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, Literal
+from typing import Dict, List, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -32,6 +32,11 @@ class QuizOut(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+class PaginatedQuizResponse(BaseModel):
+    items: List[QuizOut]
+    total: int
 
 
 class FavouriteCreate(BaseModel):

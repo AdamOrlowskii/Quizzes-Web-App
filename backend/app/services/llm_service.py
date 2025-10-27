@@ -2,6 +2,7 @@ import json
 from typing import List
 
 import openai
+
 from app.settings.config import settings
 
 CLARIN_API_KEY = settings.clarin_api_key

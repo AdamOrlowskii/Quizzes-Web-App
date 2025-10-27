@@ -4,8 +4,6 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 from psycopg2 import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.settings.database import get_db
-from app.utils import require_admin
 from app.exceptions.user_exceptions import UserNotFoundException
 from app.models.user_models import User
 from app.oauth2 import get_current_user
@@ -16,6 +14,8 @@ from app.services.user_services import (
     get_one_user,
     get_users,
 )
+from app.settings.database import get_db
+from app.utils import require_admin
 
 router = APIRouter(prefix="/users", tags=["Users"])
 

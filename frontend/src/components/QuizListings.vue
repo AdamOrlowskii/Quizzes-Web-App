@@ -18,8 +18,15 @@ defineProps({
 const state = reactive({
   quizzes: [],
   isLoading: true,
+  currentPage: 1,
+  itemsPerPage: 9,
+  totalQuizzes: 0,
 })
 
+const skip = computed(() => (state.currentPage - 1) * state.itemsPerPage)
+const totalPages = computed(() => Math.ceil(state.totalQuizzes / state.itemsPerPage))
+const hasPrevPage = computed(() => state.currentPage > 1)
+const hasNextPage = computed(() => state.currentPage < totalPages.value)
 const pageTitle = computed(() => {
   if (route.path === '/quizzes/my_quizzes') return 'My Quizzes'
   if (route.path === '/quizzes/my_favourite_quizzes') return 'My Favourite Quizzes'
@@ -33,21 +40,33 @@ const fetchQuizzes = async () => {
     let response
 
     if (route.path === '/quizzes/my_quizzes') {
-      response = await quizAPI.getMyQuizzes()
+      response = await quizAPI.getMyQuizzes(state.itemsPerPage, skip.value)
     } else if (route.path === '/quizzes/my_favourite_quizzes') {
-      response = await quizAPI.getMyFavouriteQuizzes()
+      response = await quizAPI.getMyFavouriteQuizzes(state.itemsPerPage, skip.value)
     } else {
-      response = await quizAPI.getAll()
+      response = await quizAPI.getAll(state.itemsPerPage, skip.value)
     }
 
     console.log('Quizzes loaded:', response.data)
-    state.quizzes = response.data
+    state.quizzes = response.data.items
+
+    state.totalQuizzes = response.data.total
   } catch (error) {
     console.error('Error fetching quizzes', error)
   } finally {
     state.isLoading = false
   }
 }
+
+const goToPage = page => {
+  if (page < 1 || page > totalPages.value) return
+  state.currentPage = page
+  fetchQuizzes()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
+const nextPage = () => hasNextPage.value && goToPage(state.currentPage + 1)
+const prevPage = () => hasPrevPage.value && goToPage(state.currentPage - 1)
 
 onMounted(() => {
   fetchQuizzes()
@@ -56,6 +75,7 @@ onMounted(() => {
 watch(
   () => route.path,
   () => {
+    state.currentPage = 1
     fetchQuizzes()
   }
 )
@@ -82,6 +102,48 @@ watch(
           :key="index"
           :quiz="quizItem.Quiz || quizItem[0] || quizItem"
         />
+      </div>
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="flex justify-center items-center gap-2 mt-8">
+        <button
+          @click="prevPage"
+          :disabled="!hasPrevPage"
+          :class="
+            hasPrevPage
+              ? 'bg-purple-500 text-white hover:bg-purple-600'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          "
+          class="px-4 py-2 rounded-lg font-medium"
+        >
+          Previous
+        </button>
+
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="
+            page === state.currentPage
+              ? 'bg-purple-500 text-white'
+              : 'bg-white text-purple-500 hover:bg-purple-100'
+          "
+          class="px-4 py-2 rounded-lg font-medium"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          @click="nextPage"
+          :disabled="!hasNextPage"
+          :class="
+            hasNextPage
+              ? 'bg-purple-500 text-white hover:bg-purple-600'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          "
+          class="px-4 py-2 rounded-lg font-medium"
+        >
+          Next
+        </button>
       </div>
     </div>
   </section>

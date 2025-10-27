@@ -1,9 +1,10 @@
-from app.models.user_models import User
-from app.utils import verify
 from fastapi import HTTPException, status
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.user_models import User
+from app.utils import verify
 
 
 async def get_user_for_loging(
