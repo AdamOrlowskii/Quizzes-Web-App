@@ -237,14 +237,6 @@ onMounted(async () => {
                   <span class="text-gray-600">Questions:</span>
                   <span class="font-semibold">{{ state.questions.length || 'N/A' }}</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Difficulty:</span>
-                  <span class="font-semibold">{{ state.quiz.difficulty || 'Medium' }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Time Limit:</span>
-                  <span class="font-semibold">{{ state.quiz.time_limit || '15' }} mins</span>
-                </div>
               </div>
             </div>
 

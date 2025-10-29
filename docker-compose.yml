@@ -1,0 +1,70 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: webapp_db
+    environment:
+      POSTGRES_DB: webapp_docker_db
+      POSTGRES_USER: docker_user
+      POSTGRES_PASSWORD: docker_pass_123
+    volumes:
+      - postgres_data_v2:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U docker_user -d webapp_docker_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - webapp_network
+
+  backend:
+    build: ./backend
+    container_name: webapp_backend
+    ports:
+      - "7000:7000"
+    environment:
+      DATABASE_HOSTNAME: db
+      DATABASE_PORT: 5432
+      DATABASE_PASSWORD: docker_pass_123
+      DATABASE_NAME: webapp_docker_db
+      DATABASE_USERNAME: docker_user
+      DATABASE_URL: postgresql://docker_user:docker_pass_123@db:5432/webapp_docker_db
+      PYTHONUNBUFFERED: 1
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/__pycache__
+    command: >
+      sh -c "
+      echo 'Waiting for database...' &&
+      sleep 5 &&
+      alembic upgrade head &&
+      uvicorn app.main:app --host 0.0.0.0 --port 7000 --reload
+      "
+    networks:
+      - webapp_network
+
+  frontend:
+    build: ./frontend
+    container_name: webapp_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+    networks:
+      - webapp_network
+
+volumes:
+  postgres_data_v2:
+
+networks:
+  webapp_network:
+    driver: bridge

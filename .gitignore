@@ -7,3 +7,5 @@ node_modules
 .vscode/
 *.log
 notes.txt
+*.pyc
+.DS_Store
