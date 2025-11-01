@@ -72,6 +72,7 @@ async def get_all_quizzes(
 async def insert_new_quiz(
     file: UploadFile,
     title: str,
+    questions_total: str,
     db: AsyncSession,
     current_user: User_model,
     published: bool,
@@ -102,11 +103,10 @@ async def insert_new_quiz(
     text_in_chunks = split_text(text_content, MAX_NUMBER_OF_SENTENCES_IN_ONE_CHUNK)
 
     try:
-        quiz_questions = send_text_to_llm(text_in_chunks)
+        quiz_questions = send_text_to_llm(text_in_chunks, questions_total)
         
         if not quiz_questions:
             print("Warning: No questions generated, using fallback")
-            # Opcjonalnie: dodaj fallback pytania lub rzuć wyjątek
             raise Exception("No questions generated from text")
 
 

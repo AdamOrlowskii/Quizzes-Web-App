@@ -1,3 +1,5 @@
+from app.models.user_models import User, Base
+from app.models.quiz_models import *
 import asyncio
 
 from psycopg2 import IntegrityError

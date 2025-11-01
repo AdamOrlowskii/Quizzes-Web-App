@@ -71,12 +71,16 @@ async def get_quizzes(
 async def create_quiz(
     file: UploadFile,
     title: str = Form(...),
+    total_questions: str = Form(default="20"),
     db: AsyncSession = Depends(get_db),
     current_user: User_model = Depends(get_current_user),
     published: bool = True,
 ):
+    total_questions = int(total_questions)
     try:
-        return await insert_new_quiz(file, title, db, current_user, published)
+        return await insert_new_quiz(
+            file, title, total_questions, db, current_user, published
+        )
     except WrongFileTypeException:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -117,6 +121,34 @@ async def my_quizzes(
     search: Optional[str] = "",
 ):
     return await get_my_quizzes(db, current_user, limit, skip, search)
+
+
+@router.post(
+    "/favourites",
+    status_code=status.HTTP_201_CREATED,
+    summary="Mark quiz as favourite",
+    responses={
+        404: {"description": "Quiz not found"},
+        409: {"description": "User has already added this quiz to favourites"},
+    },
+)
+async def add_quiz_to_favourites(
+    favourite: FavouriteCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User_model = Depends(get_current_user),
+):
+    try:
+        return await add_to_favourites(favourite, db, current_user)
+    except QuizNotFoundException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quiz with id: {favourite.quiz_id} does not exist",
+        )
+    except ActionAlreadyDoneException:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"User {current_user.id} has already added this quiz({favourite.quiz_id}) to favourites ",
+        )
 
 
 @router.get(
@@ -255,32 +287,4 @@ async def update_quiz_questions(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to perform requested action",
-        )
-
-
-@router.post(
-    "/favourites",
-    status_code=status.HTTP_201_CREATED,
-    summary="Mark quiz as favourite",
-    responses={
-        404: {"description": "Quiz not found"},
-        409: {"description": "User has already added this quiz to favourites"},
-    },
-)
-async def add_quiz_to_favourites(
-    favourite: FavouriteCreate,
-    db: AsyncSession = Depends(get_db),
-    current_user: User_model = Depends(get_current_user),
-):
-    try:
-        return await add_to_favourites(favourite, db, current_user)
-    except QuizNotFoundException:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Quiz with id: {favourite.quiz_id} does not exist",
-        )
-    except ActionAlreadyDoneException:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=f"User {current_user.id} has already added this quiz({favourite.quiz_id}) to favourites ",
         )

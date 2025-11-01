@@ -20,11 +20,9 @@ const handleLogin = async () => {
 
     localStorage.setItem('isAdmin', loginResponse.data.is_admin ? 'true' : 'false')
 
-    await authAPI.login(form.email, form.password)
-    localStorage.setItem('userEmail', form.email)
     toast.success('Login successful!')
 
-    window.location.href = '/quizzes'
+    window.location.href = '/'
   } catch (error) {
     console.error('Login error:', error)
     if (error.response?.status === 401) {

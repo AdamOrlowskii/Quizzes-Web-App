@@ -8,6 +8,7 @@ const form = reactive({
   title: '',
   file: null,
   published: true,
+  total_questions: 20,
 })
 
 const uploading = ref(false)
@@ -30,11 +31,20 @@ const handleSubmit = async () => {
     toast.error('Please enter a quiz title')
     return
   }
+  if (!form.total_questions) {
+    toast.error('Please enter a number of quiz questions')
+    return
+  }
 
   uploading.value = true
 
   try {
-    const response = await quizAPI.create(form.file, form.title, form.published)
+    const response = await quizAPI.create(
+      form.file,
+      form.title,
+      form.published,
+      form.total_questions
+    )
 
     toast.success('Quiz Added Successfully')
     router.push(`/quizzes/${response.data.id}`)
@@ -78,6 +88,18 @@ const handleSubmit = async () => {
               required
             />
             <p class="text-gray-600 text-sm">Upload a PDF or TXT file</p>
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-gray-700 font-bold mb-2">Number of questions</label>
+            <input
+              type="text"
+              v-model.number="form.total_questions"
+              class="border rounded w-full py-2 px-3 mb-2"
+              placeholder="eg. 10"
+              :disabled="uploading"
+              required
+            />
           </div>
 
           <div class="mb-4">

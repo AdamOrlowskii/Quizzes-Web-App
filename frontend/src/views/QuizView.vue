@@ -164,14 +164,6 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <!-- Quiz Content/Description -->
-              <div class="mb-6">
-                <h2 class="text-lg font-semibold mb-2 text-gray-700">Description</h2>
-                <p class="text-gray-600 bg-gray-50 p-4 rounded">
-                  {{ state.quiz.content || 'No description available.' }}
-                </p>
-              </div>
-
               <!-- Questions Preview (if loaded) -->
               <div v-if="state.questions.length > 0" class="mb-6">
                 <h2 class="text-lg font-semibold mb-3 text-gray-700">

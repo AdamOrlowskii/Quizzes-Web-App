@@ -59,11 +59,12 @@ export const quizAPI = {
     api.get('/quizzes/my_favourite_quizzes', { params: { limit, skip, search } }),
   getById: id => api.get(`/quizzes/${id}`),
   getQuestions: id => api.get(`/quizzes/play/${id}`),
-  create: async (file, title, published = true) => {
+  create: async (file, title, published = true, total_questions = 20) => {
     const formData = new FormData()
     formData.append('file', file)
     formData.append('title', title)
     formData.append('published', published)
+    formData.append('total_questions', String(total_questions))
     return api.post('/quizzes', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     })

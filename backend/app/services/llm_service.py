@@ -6,27 +6,18 @@ import openai
 from app.settings.config import settings
 
 CLARIN_API_KEY = settings.clarin_api_key
-QUESTIONS_PER_CHUNK = settings.questions_per_chunk
 
 
-def send_text_to_llm(text_chunks: List[str]) -> List[dict]:
-    """
-    Generuje pytania quizowe z chunków tekstu używając LLM
+def send_text_to_llm(text_chunks: List[str], questions_total: int) -> List[dict]:
 
-    Args:
-        text_chunks: Lista fragmentów tekstu
-        questions_per_chunk: Ile pytań na chunk (default: 3)
-
-    Returns:
-        Lista pytań: [{"Q": "...", "A": {...}, "C": "1"}, ...]
-    """
+    QUESTIONS_PER_CHUNK = questions_total // len(text_chunks)
+    REMAINDER = questions_total % len(text_chunks)
+    all_questions = []
 
     client = openai.OpenAI(
         api_key=CLARIN_API_KEY, base_url="https://services.clarin-pl.eu/api/v1/oapi/"
     )
-
-    all_questions = []
-
+    
     system_prompt = """ You are an expert at creating educational quiz questions.
 
 RULES:
@@ -57,19 +48,21 @@ Return ONLY the JSON array, no markdown formatting, no explanations."""
 
     print(f"Processing {len(text_chunks)} chunks with LLM...")
 
-    for i, chunk in enumerate(text_chunks, 1):
+    for i, chunk in enumerate(text_chunks):
 
         if not chunk.strip():
             continue
 
+        questions_for_chunk = QUESTIONS_PER_CHUNK + (1 if i < REMAINDER else 0)
+
         print(f"Chunk {i}/{len(text_chunks)} ({len(chunk)} chars)...")
 
-        user_prompt = f"""Generate EXACTLY {QUESTIONS_PER_CHUNK} quiz questions from the following text.
+        user_prompt = f"""Generate EXACTLY {questions_for_chunk} quiz questions from the following text.
 
     TEXT:
 {chunk}
 
-Remember: Return ONLY the JSON array with {QUESTIONS_PER_CHUNK} questions."""
+Remember: Return ONLY the JSON array with {questions_for_chunk} questions."""
 
         try:
             print( "Calling GPT-4o...")
