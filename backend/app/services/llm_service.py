@@ -9,7 +9,6 @@ CLARIN_API_KEY = settings.clarin_api_key
 
 
 def send_text_to_llm(text_chunks: List[str], questions_total: int) -> List[dict]:
-
     QUESTIONS_PER_CHUNK = questions_total // len(text_chunks)
     REMAINDER = questions_total % len(text_chunks)
     all_questions = []
@@ -17,7 +16,7 @@ def send_text_to_llm(text_chunks: List[str], questions_total: int) -> List[dict]
     client = openai.OpenAI(
         api_key=CLARIN_API_KEY, base_url="https://services.clarin-pl.eu/api/v1/oapi/"
     )
-    
+
     system_prompt = """ You are an expert at creating educational quiz questions.
 
 RULES:
@@ -49,7 +48,6 @@ Return ONLY the JSON array, no markdown formatting, no explanations."""
     print(f"Processing {len(text_chunks)} chunks with LLM...")
 
     for i, chunk in enumerate(text_chunks):
-
         if not chunk.strip():
             continue
 
@@ -65,23 +63,23 @@ Return ONLY the JSON array, no markdown formatting, no explanations."""
 Remember: Return ONLY the JSON array with {questions_for_chunk} questions."""
 
         try:
-            print( "Calling GPT-4o...")
-            
+            print("Calling GPT-4o...")
+
             response = client.chat.completions.create(
                 model="gpt-4o",
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.7,
-                max_tokens=2000
+                max_tokens=2000,
             )
-            
+
             content = response.choices[0].message.content.strip()
             print(f"Received response: {len(content)} chars")
-            
+
             print(f"Response preview: {content[:200]}...")
-            
+
             if content.startswith("```json"):
                 content = content[7:]
             if content.startswith("```"):
@@ -89,14 +87,14 @@ Remember: Return ONLY the JSON array with {questions_for_chunk} questions."""
             if content.endswith("```"):
                 content = content[:-3]
             content = content.strip()
-            
+
             questions = json.loads(content)
             print(f"Parsed: {len(questions)} questions")
-            
+
             if not isinstance(questions, list):
                 print(f"ERROR: Expected list, got {type(questions)}\n")
                 continue
-            
+
             valid_questions = []
             for idx, q in enumerate(questions, 1):
                 if all(key in q for key in ["Q", "A", "C"]):
@@ -107,22 +105,22 @@ Remember: Return ONLY the JSON array with {questions_for_chunk} questions."""
                         print(f"Q{idx}: Invalid structure")
                 else:
                     print(f"Q{idx}: Missing keys")
-            
+
             all_questions.extend(valid_questions)
             print(f"\nCHUNK {i} COMPLETE: {len(valid_questions)} valid questions added")
             print(f"Running total: {len(all_questions)} questions\n")
-            
+
         except json.JSONDecodeError as e:
             print(f"JSON PARSE ERROR: {e}")
             print(f"Full response:\n{content}\n")
             continue
-            
+
         except Exception as e:
             print(f"ERROR: {e}\n")
             continue
-    
-    print(f"{'='*60}")
+
+    print(f"{'=' * 60}")
     print(f"FINAL RESULT: {len(all_questions)} questions generated")
-    print(f"{'='*60}\n")
-    
+    print(f"{'=' * 60}\n")
+
     return all_questions

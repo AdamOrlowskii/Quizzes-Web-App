@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+import pymupdf
+import pymupdf4llm
 from fastapi import (
     UploadFile,
 )
@@ -39,11 +41,10 @@ async def get_quiz_by_id(id, db) -> Quiz_model:
 async def get_all_quizzes(
     db: AsyncSession, limit: int, skip: int, search: Optional[str]
 ):
-    
     count_query = select(func.count(Quiz_model.id)).where(Quiz_model.published)
     if search:
         count_query = count_query.where(Quiz_model.title.ilike(f"%{search}%"))
-    
+
     total_result = await db.execute(count_query)
     total = total_result.scalar()
 
@@ -62,11 +63,8 @@ async def get_all_quizzes(
 
     result = await db.execute(query)
     quizzes = result.all()
-    
-    return {
-        "items": quizzes,
-        "total": total
-    }
+
+    return {"items": quizzes, "total": total}
 
 
 async def insert_new_quiz(
@@ -79,11 +77,17 @@ async def insert_new_quiz(
 ):
     text_content = None
     content = await file.read()
+
     if file.filename.endswith(".txt"):
         text_content = content.decode("utf-8")
     elif file.filename.endswith(".pdf"):
-        parser = PDFParser(content, debug=True)
-        text_content = parser.parse()
+        # parser = PDFParser(content, debug=True)
+        # text_content = parser.parse()
+        pdf_doc = pymupdf.open(stream=content, filetype="pdf")
+
+        text_content = pymupdf4llm.to_markdown(pdf_doc)
+
+        pdf_doc.close()
         if text_content:
             print(f"Successfully extracted {len(text_content)} characters")
             preview = text_content[:200].replace("\n", " ")
@@ -104,11 +108,10 @@ async def insert_new_quiz(
 
     try:
         quiz_questions = send_text_to_llm(text_in_chunks, questions_total)
-        
+
         if not quiz_questions:
             print("Warning: No questions generated, using fallback")
             raise Exception("No questions generated from text")
-
 
         for question in quiz_questions:
             new_question_to_database = Question_model(
@@ -127,7 +130,9 @@ async def insert_new_quiz(
         raise CreatingQuizException()
 
 
-async def get_my_favourite_quizzes(db: AsyncSession, current_user: User_model, limit: int, skip: int, search: str):
+async def get_my_favourite_quizzes(
+    db: AsyncSession, current_user: User_model, limit: int, skip: int, search: str
+):
     count_query = (
         select(func.count(Quiz_model.id))
         .join(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
@@ -135,10 +140,10 @@ async def get_my_favourite_quizzes(db: AsyncSession, current_user: User_model, l
     )
     if search:
         count_query = count_query.where(Quiz_model.title.ilike(f"%{search}%"))
-    
+
     total_result = await db.execute(count_query)
     total = total_result.scalar()
-    
+
     query = (
         select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
         .join(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
@@ -148,27 +153,28 @@ async def get_my_favourite_quizzes(db: AsyncSession, current_user: User_model, l
         .limit(limit)
         .offset(skip)
     )
-    
+
     if search:
         query = query.where(Quiz_model.title.ilike(f"%{search}%"))
-    
+
     result = await db.execute(query)
     quizzes = result.all()
-    
-    return {
-        "items": quizzes,
-        "total": total
-    }
+
+    return {"items": quizzes, "total": total}
 
 
-async def get_my_quizzes(db: AsyncSession, current_user: User_model, limit: int, skip: int, search: str):
-    count_query = select(func.count(Quiz_model.id)).where(Quiz_model.owner_id == current_user.id)
+async def get_my_quizzes(
+    db: AsyncSession, current_user: User_model, limit: int, skip: int, search: str
+):
+    count_query = select(func.count(Quiz_model.id)).where(
+        Quiz_model.owner_id == current_user.id
+    )
     if search:
         count_query = count_query.where(Quiz_model.title.ilike(f"%{search}%"))
-    
+
     total_result = await db.execute(count_query)
     total = total_result.scalar()
-    
+
     query = (
         select(Quiz_model, func.count(Favourite_model.quiz_id).label("favourites"))
         .outerjoin(Favourite_model, Favourite_model.quiz_id == Quiz_model.id)
@@ -178,17 +184,14 @@ async def get_my_quizzes(db: AsyncSession, current_user: User_model, limit: int,
         .limit(limit)
         .offset(skip)
     )
-    
+
     if search:
         query = query.where(Quiz_model.title.ilike(f"%{search}%"))
-    
+
     result = await db.execute(query)
     quizzes = result.all()
-    
-    return {
-        "items": quizzes,
-        "total": total
-    }
+
+    return {"items": quizzes, "total": total}
 
 
 async def get_one_quiz(id, db) -> Result:
