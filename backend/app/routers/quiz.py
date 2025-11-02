@@ -9,6 +9,8 @@ from fastapi import (
     UploadFile,
     status,
 )
+from fastapi.responses import FileResponse, JSONResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.exceptions.quiz_exceptions import (
@@ -19,6 +21,8 @@ from app.exceptions.quiz_exceptions import (
     UserNotAuthorizedException,
     WrongFileTypeException,
 )
+from app.models.quiz_models import Question as Question_model
+from app.models.quiz_models import Quiz as Quiz_model
 from app.models.user_models import User as User_model
 from app.oauth2 import get_current_user
 from app.schemas.quiz_schemas import (
@@ -33,6 +37,8 @@ from app.schemas.quiz_schemas import (
 )
 from app.services.quiz_services import (
     add_to_favourites,
+    export_json,
+    export_pdf,
     get_all_quizzes,
     get_my_favourite_quizzes,
     get_my_quizzes,
@@ -287,4 +293,42 @@ async def update_quiz_questions(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to perform requested action",
+        )
+
+
+@router.get(
+    "/{quiz_id}/export/json",
+    status_code=status.HTTP_201_CREATED,
+    responses={404: {"description": "Quiz not found"}},
+)
+async def export_quiz_json(
+    quiz_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User_model = Depends(get_current_user),
+):
+    try:
+        return await export_json(quiz_id, db)
+    except QuizNotFoundException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quiz with id: {quiz_id} was not found",
+        )
+
+
+@router.get(
+    "/{quiz_id}/export/pdf",
+    status_code=status.HTTP_201_CREATED,
+    responses={404: {"description": "Quiz not found"}},
+)
+async def export_quiz_pdf(
+    quiz_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User_model = Depends(get_current_user),
+):
+    try:
+        return await export_pdf(quiz_id, db)
+    except QuizNotFoundException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quiz with id: {quiz_id} was not found",
         )

@@ -39,6 +39,34 @@ def split_text(text: str, max_chunk_length: int):
     return chunks
 
 
+def smart_split(text, max_length):
+    """Dzieli tekst po słowach, nie w środku"""
+    if len(text) <= max_length:
+        return [text]
+
+    lines = []
+    words = text.split(" ")
+    current_line = []
+    current_length = 0
+
+    for word in words:
+        word_length = len(word) + 1
+
+        if current_length + word_length <= max_length:
+            current_line.append(word)
+            current_length += word_length
+        else:
+            if current_line:
+                lines.append(" ".join(current_line))
+            current_line = [word]
+            current_length = len(word) + 1
+
+    if current_line:
+        lines.append(" ".join(current_line))
+
+    return lines
+
+
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_admin:
         raise HTTPException(

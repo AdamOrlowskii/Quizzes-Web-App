@@ -1,7 +1,7 @@
 <script setup>
 import PulseLoader from 'vue-spinner/src/PulseLoader.vue'
 import BackButton from '@/components/BackButton.vue'
-import { reactive, onMounted, computed } from 'vue'
+import { reactive, onMounted, computed, ref } from 'vue'
 import { useRoute, RouterLink, useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import { quizAPI } from '@/services/api'
@@ -18,6 +18,8 @@ const state = reactive({
   isLoading: true,
   isFavourite: false,
 })
+
+const isDownloading = ref(false)
 
 const toggleFavourite = async () => {
   try {
@@ -77,6 +79,48 @@ const formatDate = dateString => {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+const downloadJSON = async () => {
+  isDownloading.value = true
+  try {
+    const response = await quizAPI.exportJSON(quizId) // ← Poprawione z props.quiz.id
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${state.quiz.title}_questions.json`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    toast.success('JSON downloaded!')
+  } catch (error) {
+    console.error('Download error:', error)
+    toast.error('Download failed')
+  } finally {
+    isDownloading.value = false
+  }
+}
+
+const downloadPDF = async () => {
+  isDownloading.value = true
+  try {
+    const response = await quizAPI.exportPDF(quizId) // ← Poprawione z props.quiz.id
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${state.quiz.title}_test.pdf`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    toast.success('PDF downloaded!')
+  } catch (error) {
+    console.error('Download error:', error)
+    toast.error('Download failed')
+  } finally {
+    isDownloading.value = false
+  }
 }
 
 onMounted(async () => {
@@ -169,9 +213,9 @@ onMounted(async () => {
                 <h2 class="text-lg font-semibold mb-3 text-gray-700">
                   Questions ({{ state.questions.length }})
                 </h2>
-                <div class="space-y-3 max-h-96 overflow-y-auto">
+                <div class="space-y-3 max-h-140 overflow-y-auto">
                   <div
-                    v-for="(question, index) in state.questions.slice(0, 5)"
+                    v-for="(question, index) in state.questions.slice(0, 6)"
                     :key="question.id"
                     class="bg-gray-50 p-3 rounded"
                   >
@@ -188,8 +232,8 @@ onMounted(async () => {
                       </div>
                     </div>
                   </div>
-                  <p v-if="state.questions.length > 5" class="text-sm text-gray-500 italic">
-                    And {{ state.questions.length - 5 }} more questions...
+                  <p v-if="state.questions.length > 6" class="text-sm text-gray-500 italic">
+                    And {{ state.questions.length - 6 }} more questions...
                   </p>
                 </div>
               </div>
@@ -221,59 +265,245 @@ onMounted(async () => {
           </main>
 
           <!-- Sidebar -->
-          <aside>
-            <div class="bg-white p-6 rounded-lg shadow-md">
-              <h3 class="text-xl font-bold mb-4">Quiz Statistics</h3>
-              <div class="space-y-3">
-                <div class="flex justify-between">
-                  <span class="text-gray-600">Questions:</span>
-                  <span class="font-semibold">{{ state.questions.length || 'N/A' }}</span>
+          <aside class="space-y-6">
+            <!-- Quiz Statistics -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    />
+                  </svg>
+                  Statistics
+                </h3>
+              </div>
+
+              <div class="p-5">
+                <div
+                  class="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-purple-50 rounded-lg"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center"
+                    >
+                      <svg
+                        class="w-6 h-6 text-purple-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <p class="text-sm text-gray-600 font-medium">Total Questions</p>
+                      <p class="text-2xl font-bold text-gray-800">
+                        {{ state.questions.length || 0 }}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div v-if="isMyQuiz" class="bg-white p-6 rounded-lg shadow-md mt-6">
-              <h3 class="text-xl font-bold mb-4">Manage Quiz</h3>
-              <RouterLink
-                :to="`/quizzes/edit/${quizId}`"
-                class="bg-purple-500 hover:bg-purple-600 text-white text-center font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline block"
-              >
-                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"
-                  />
-                </svg>
-                Edit Quiz
-              </RouterLink>
-              <button
-                @click="deleteQuiz"
-                class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-full w-full focus:outline-none focus:shadow-outline mt-3 block"
-              >
-                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fill-rule="evenodd"
-                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                    clip-rule="evenodd"
-                  />
-                </svg>
-                Delete Quiz
-              </button>
+            <!-- Manage Quiz -->
+            <div v-if="isMyQuiz" class="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                  <span class="text-xl">⚙️</span>
+                  Manage Quiz
+                </h3>
+              </div>
+
+              <div class="p-5 space-y-3">
+                <RouterLink
+                  :to="`/quizzes/edit/${quizId}`"
+                  class="flex items-center gap-3 w-full p-3 rounded-lg border-2 border-green-200 hover:border-green-400 hover:bg-green-50 transition-all group"
+                >
+                  <div
+                    class="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors"
+                  >
+                    <svg
+                      class="w-5 h-5 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                  </div>
+                  <div class="flex-1 text-left">
+                    <div class="font-semibold text-gray-800">Edit Quiz</div>
+                    <div class="text-xs text-gray-500">Modify questions</div>
+                  </div>
+                  <svg
+                    class="w-5 h-5 text-gray-400 group-hover:text-green-500 transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </RouterLink>
+
+                <button
+                  @click="deleteQuiz"
+                  class="flex items-center gap-3 w-full p-3 rounded-lg border-2 border-red-200 hover:border-red-400 hover:bg-red-50 transition-all group"
+                >
+                  <div
+                    class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors"
+                  >
+                    <svg
+                      class="w-5 h-5 text-red-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </div>
+                  <div class="flex-1 text-left">
+                    <div class="font-semibold text-gray-800">Delete Quiz</div>
+                    <div class="text-xs text-gray-500">Remove permanently</div>
+                  </div>
+                  <svg
+                    class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                </button>
+              </div>
             </div>
 
-            <div class="bg-white p-6 rounded-lg shadow-md mt-6">
-              <h3 class="text-xl font-bold mb-4">Share Quiz</h3>
-              <button
-                @click="copyQuizLink"
-                class="bg-blue-500 hover:bg-blue-600 text-white text-center font-bold py-2 px-4 rounded-full w-full"
-              >
-                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                  <path
-                    d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"
-                  />
-                </svg>
-                Copy Link
-              </button>
+            <!-- Share Quiz -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+              <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                  <span class="text-xl">🔗</span>
+                  Share Quiz
+                </h3>
+              </div>
+
+              <div class="p-5">
+                <!-- Downloads -->
+                <div class="space-y-3 mb-5">
+                  <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Download
+                  </h4>
+
+                  <button
+                    @click="downloadJSON"
+                    :disabled="isDownloading"
+                    class="flex items-center gap-3 w-full p-3 rounded-lg border-2 border-blue-200 hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all group"
+                  >
+                    <div
+                      class="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors"
+                    >
+                      <span v-if="isDownloading" class="animate-spin">⏳</span>
+                      <span v-else class="text-xl">📋</span>
+                    </div>
+                    <div class="flex-1 text-left">
+                      <div class="font-semibold text-gray-800">JSON Format</div>
+                      <div class="text-xs text-gray-500">Machine-readable data</div>
+                    </div>
+                    <svg
+                      class="w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </button>
+
+                  <button
+                    @click="downloadPDF"
+                    :disabled="isDownloading"
+                    class="flex items-center gap-3 w-full p-3 rounded-lg border-2 border-red-200 hover:border-red-400 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all group"
+                  >
+                    <div
+                      class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors"
+                    >
+                      <span v-if="isDownloading" class="animate-spin">⏳</span>
+                      <span v-else class="text-xl">📄</span>
+                    </div>
+                    <div class="flex-1 text-left">
+                      <div class="font-semibold text-gray-800">PDF Test</div>
+                      <div class="text-xs text-gray-500">Ready to print</div>
+                    </div>
+                    <svg
+                      class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <!-- Share Link -->
+                <div class="space-y-3">
+                  <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Share Link
+                  </h4>
+
+                  <button
+                    @click="copyQuizLink"
+                    class="flex items-center justify-center gap-2 w-full p-3 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg"
+                  >
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                      <path
+                        d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"
+                      />
+                    </svg>
+                    <span>Copy Link</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </aside>
         </div>
