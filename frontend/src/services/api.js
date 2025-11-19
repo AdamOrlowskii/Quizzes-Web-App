@@ -1,4 +1,5 @@
 import axios from 'axios'
+import router from '@/router'
 
 const API_URL = '/api'
 
@@ -22,7 +23,7 @@ api.interceptors.response.use(
   error => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
-      window.location.href = '/login'
+      router.push('/login')
     }
     return Promise.reject(error)
   }
@@ -72,12 +73,14 @@ export const quizAPI = {
   update: (id, data) => api.put(`/quizzes/${id}`, data),
   updateQuestions: (id, questions) => api.put(`/quizzes/${id}/questions`, questions),
   delete: id => api.delete(`/quizzes/${id}`),
-  exportJSON: (quizId) => api.get(`/quizzes/${quizId}/export/json`, {
-    responseType: 'blob'
-  }),
-  exportPDF: (quizId) => api.get(`/quizzes/${quizId}/export/pdf`, {
-    responseType: 'blob'
-  }),
+  exportJSON: quizId =>
+    api.get(`/quizzes/${quizId}/export/json`, {
+      responseType: 'blob',
+    }),
+  exportPDF: quizId =>
+    api.get(`/quizzes/${quizId}/export/pdf`, {
+      responseType: 'blob',
+    }),
 }
 
 // ===== FAVOURITES =====
