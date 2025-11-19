@@ -22,7 +22,9 @@ class Quiz(Base):
     )
 
     owner = relationship("User", back_populates="quizzes")
-    questions = relationship("Question", back_populates="quiz", cascade="all, delete-orphan")
+    questions = relationship(
+        "Question", back_populates="quiz", cascade="all, delete-orphan"
+    )
 
 
 class Favourite(Base):

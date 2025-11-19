@@ -189,37 +189,43 @@ onMounted(async () => {
         </div>
 
         <!-- Review Answers -->
-        <div class="mb-8 text-left">
-          <h3 class="text-xl font-semibold mb-4">Review Your Answers</h3>
-          <div class="space-y-4">
-            <div
-              v-for="(answer, index) in state.userAnswers"
-              :key="index"
-              :class="[
-                'p-4 rounded-lg border-2',
-                answer.isCorrect ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50',
-              ]"
-            >
-              <div class="flex items-center mb-2">
-                <span
-                  :class="['font-semibold', answer.isCorrect ? 'text-green-600' : 'text-red-600']"
-                >
-                  Question {{ index + 1 }}:
-                  {{ answer.isCorrect ? '✓ Correct' : '✗ Incorrect' }}
-                </span>
-              </div>
-              <p class="text-sm text-gray-700 mb-1">
-                Your answer: <strong>{{ answer.selectedAnswer }}</strong>
-              </p>
-              <p v-if="!answer.isCorrect" class="text-sm text-gray-700">
-                Correct answer: <strong>{{ answer.correctAnswer }}</strong>
-              </p>
-            </div>
+        <div
+          v-for="(answer, index) in state.userAnswers"
+          :key="index"
+          :class="[
+            'p-4 rounded-lg border-2 mt-1',
+            answer.isCorrect ? 'border-green-300 bg-green-50' : 'border-red-300 bg-red-50',
+          ]"
+        >
+          <div class="flex items-center mb-2">
+            <span :class="['font-semibold', answer.isCorrect ? 'text-green-600' : 'text-red-600']">
+              Question {{ index + 1 }}:
+              {{ answer.isCorrect ? '✓ Correct' : '✗ Incorrect' }}
+            </span>
           </div>
+
+          <!-- Question -->
+          <p class="text-sm text-gray-800 font-medium mb-2">
+            {{ state.questions[index]?.question_text }}
+          </p>
+
+          <!-- Your answer -->
+          <p class="text-sm text-gray-700 mb-1">
+            Your answer:
+            <strong>{{ state.questions[index]?.answers[answer.selectedAnswer] }}</strong>
+          </p>
+
+          <!-- Correct answer -->
+          <p v-if="!answer.isCorrect" class="text-sm text-gray-700">
+            Correct answer:
+            <strong class="text-green-600">{{
+              state.questions[index]?.answers[answer.correctAnswer]
+            }}</strong>
+          </p>
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-4 justify-center">
+        <div class="flex gap-4 justify-center mt-6">
           <button
             @click="restartQuiz"
             class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-lg"
