@@ -51,59 +51,44 @@ The aim of this project was to design and develop a web application that enables
 
 ### Requirements
 
-- Python 3.12+
-- Node.js 18+
-- PostgreSQL 14+
+- Docker
+- Docker Compose
 
-### 1. Database Configuration
+### Running the Application
 
+1. **Clone the repository**
 ```bash
-# Create PostgreSQL database
-createdb quiz_app
+   git clone
+   cd 
 ```
 
-### 2. Backend Setup
-
+2. **Configure environment variables**
 ```bash
-cd backend
-
-# Create virtual environment
-python -m venv env
-source env/bin/activate  # Linux/Mac
-# or: env\Scripts\activate  # Windows
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Copy the .env.example file to .env and set your environment variables
-cp .env.example .env
-
-# Run migrations
-alembic upgrade head
-
-# Create admin account
-python -m app.scripts.add_admin
-
-# Start development server
-uvicorn app.main:app --reload
+   cp .env.example .env
+   # Edit .env file and set your environment variables
 ```
 
-Backend available at: `http://localhost:7000`  
-API Documentation (Swagger): `http://localhost:7000/docs`
-
-### 3. Frontend Setup
-
+3. **Build and start all services**
 ```bash
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+   docker-compose up --build
 ```
 
-Frontend available at: `http://localhost:3000`
+4. **Create admin account** (in a new terminal)
+```bash
+   docker-compose exec backend python -m app.scripts.add_admin
+```
+
+### Application URLs
+
+* **Frontend**: [http://localhost:3000](http://localhost:3000)
+* **Backend API**: [http://localhost:7000](http://localhost:7000)
+* **API Documentation (Swagger)**: [http://localhost:7000/docs](http://localhost:7000/docs)
+
+### Stopping the Application
+```bash
+docker-compose down
+```
+
 
 ## Architecture
 
@@ -147,6 +132,7 @@ web_app/
 │   │   ├── settings/         # Database and environmental variables settings
 │   │   ├── main.py           # Entry point
 │   │   ├── oauth2.py         # Authentication methods
+│   │   ├── tests/        # Tests directory
 │   │   ├── utils.py          # Small utils methods
 │   │   └── ...
 │   ├── alembic/              # Database migrations
