@@ -132,7 +132,7 @@ web_app/
 │   │   ├── settings/         # Database and environmental variables settings
 │   │   ├── main.py           # Entry point
 │   │   ├── oauth2.py         # Authentication methods
-│   │   ├── tests/        # Tests directory
+│   │   ├── tests/            # Tests directory
 │   │   ├── utils.py          # Small utils methods
 │   │   └── ...
 │   ├── alembic/              # Database migrations
