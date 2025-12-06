@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+    <question type="multichoice">
+        <name>
+            <text>Question 1</text>
+        </name>
+        <questiontext format="html">
+            <text>Co było główną przyczyną kryzysu w europejskich miastach przemysłowych w drugiej połowie XX wieku?</text>
+        </questiontext>
+        <defaultgrade>1</defaultgrade>
+        <penalty>0.3333333</penalty>
+        <shuffleanswers>true</shuffleanswers>
+        <single>true</single>
+        <answernumbering>abc</answernumbering>
+        <answer fraction="0" format="html">
+            <text>Wzrost liczby ludności</text>
+        </answer>
+        <answer fraction="100" format="html">
+            <text>Upadek przemysłu ciężkiego</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Ekspansja sektora usługowego</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Rozwój technologii informacyjnych</text>
+        </answer>
+    </question>
+    <question type="multichoice">
+        <name>
+            <text>Question 2</text>
+        </name>
+        <questiontext format="html">
+            <text>Jakie były skutki upadku przemysłu ciężkiego dla miast europejskich?</text>
+        </questiontext>
+        <defaultgrade>1</defaultgrade>
+        <penalty>0.3333333</penalty>
+        <shuffleanswers>true</shuffleanswers>
+        <single>true</single>
+        <answernumbering>abc</answernumbering>
+        <answer fraction="0" format="html">
+            <text>Wzrost liczby nowych fabryk</text>
+        </answer>
+        <answer fraction="100" format="html">
+            <text>Masowe bezrobocie i migracja</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Rozwój lokalnej infrastruktury</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Zmniejszenie konkurencji</text>
+        </answer>
+    </question>
+    <question type="multichoice">
+        <name>
+            <text>Question 3</text>
+        </name>
+        <questiontext format="html">
+            <text>Które sektory gospodarki dominowały w regionach najbardziej dotkniętych kryzysem?</text>
+        </questiontext>
+        <defaultgrade>1</defaultgrade>
+        <penalty>0.3333333</penalty>
+        <shuffleanswers>true</shuffleanswers>
+        <single>true</single>
+        <answernumbering>abc</answernumbering>
+        <answer fraction="0" format="html">
+            <text>Przemysł lekki i rolnictwo</text>
+        </answer>
+        <answer fraction="100" format="html">
+            <text>Przemysł górniczy i hutniczy</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Sektor usługowy i turystyka</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Handel i transport</text>
+        </answer>
+    </question>
+    <question type="multichoice">
+        <name>
+            <text>Question 4</text>
+        </name>
+        <questiontext format="html">
+            <text>Które z wymienionych regionów NIE zostało wymienione jako szczególnie dotknięte kryzysem?</text>
+        </questiontext>
+        <defaultgrade>1</defaultgrade>
+        <penalty>0.3333333</penalty>
+        <shuffleanswers>true</shuffleanswers>
+        <single>true</single>
+        <answernumbering>abc</answernumbering>
+        <answer fraction="0" format="html">
+            <text>Zagłębie Ruhry w Niemczech</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Północna Anglia</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Polski Śląsk</text>
+        </answer>
+        <answer fraction="100" format="html">
+            <text>Południowa Francja</text>
+        </answer>
+    </question>
+    <question type="multichoice">
+        <name>
+            <text>Question 5</text>
+        </name>
+        <questiontext format="html">
+            <text>Jakie zjawisko towarzyszyło zamykaniu kopalń i fabryk w drugiej połowie XX wieku?</text>
+        </questiontext>
+        <defaultgrade>1</defaultgrade>
+        <penalty>0.3333333</penalty>
+        <shuffleanswers>true</shuffleanswers>
+        <single>true</single>
+        <answernumbering>abc</answernumbering>
+        <answer fraction="0" format="html">
+            <text>Wzrost inwestycji zagranicznych</text>
+        </answer>
+        <answer fraction="100" format="html">
+            <text>Spadek liczby ludności w miastach</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Rozwój technologii informacyjnych</text>
+        </answer>
+        <answer fraction="0" format="html">
+            <text>Zwiększenie produkcji przemysłowej</text>
+        </answer>
+    </question>
+</quiz>

@@ -123,6 +123,27 @@ const downloadPDF = async () => {
   }
 }
 
+const downloadXML = async () => {
+  isDownloading.value = true
+  try {
+    const response = await quizAPI.exportXML(quizId) // ← Poprawione z props.quiz.id
+    const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/xml' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${state.quiz.title}_test.xml`)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+    toast.success('XML downloaded!')
+  } catch (error) {
+    console.error('Download error:', error)
+    toast.error('Download failed')
+  } finally {
+    isDownloading.value = false
+  }
+}
+
 onMounted(async () => {
   try {
     const response = await quizAPI.getById(quizId)
@@ -422,6 +443,39 @@ onMounted(async () => {
                   <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     Download
                   </h4>
+                  <div>
+                    <button
+                      @click="downloadXML"
+                      :disabled="isDownloading"
+                      class="flex items-center gap-3 w-full p-3 rounded-lg border-2 border-orange-200 hover:border-orange-400 hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all group"
+                    >
+                      <div
+                        class="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors"
+                      >
+                        <span v-if="isDownloading" class="animate-spin">⏳</span>
+                        <span v-else class="text-xl">📄</span>
+                      </div>
+                      <div class="flex-1 text-left">
+                        <div class="font-semibold text-gray-800">Moodle XML Test</div>
+                        <div class="text-xs text-gray-500">
+                          Ready to upload into Moodle platform
+                        </div>
+                      </div>
+                      <svg
+                        class="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                        />
+                      </svg>
+                    </button>
+                  </div>
 
                   <button
                     @click="downloadJSON"
@@ -456,10 +510,10 @@ onMounted(async () => {
                   <button
                     @click="downloadPDF"
                     :disabled="isDownloading"
-                    class="flex items-center gap-3 w-full p-3 rounded-lg border-2 border-red-200 hover:border-red-400 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all group"
+                    class="flex items-center gap-3 w-full p-3 rounded-lg border-2 border-orange-200 hover:border-orange-400 hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all group"
                   >
                     <div
-                      class="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors"
+                      class="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition-colors"
                     >
                       <span v-if="isDownloading" class="animate-spin">⏳</span>
                       <span v-else class="text-xl">📄</span>
@@ -469,7 +523,7 @@ onMounted(async () => {
                       <div class="text-xs text-gray-500">Ready to print</div>
                     </div>
                     <svg
-                      class="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors"
+                      class="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

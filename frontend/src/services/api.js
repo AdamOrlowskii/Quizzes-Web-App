@@ -81,6 +81,10 @@ export const quizAPI = {
     api.get(`/quizzes/${quizId}/export/pdf`, {
       responseType: 'blob',
     }),
+  exportXML: quizId =>
+    api.get(`/quizzes/${quizId}/export/xml`, {
+      responseType: 'blob',
+    }),
 }
 
 // ===== FAVOURITES =====

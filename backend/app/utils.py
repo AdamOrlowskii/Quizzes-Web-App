@@ -21,7 +21,6 @@ def split_text(text: str, max_chunk_length: int):
     sentences = re.split(r"(?<=[.!?]) +", text)
 
     chunks = [""]
-
     i = 0
     sentences_in_chunk = 0
 

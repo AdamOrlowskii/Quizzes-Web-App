@@ -35,6 +35,7 @@ from app.services.quiz_services import (
     add_to_favourites,
     export_json,
     export_pdf,
+    export_moodle_xml,
     get_all_quizzes,
     get_my_favourite_quizzes,
     get_my_quizzes,
@@ -300,10 +301,27 @@ async def update_quiz_questions(
 async def export_quiz_json(
     quiz_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User_model = Depends(get_current_user),
 ):
     try:
         return await export_json(quiz_id, db)
+    except QuizNotFoundException:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Quiz with id: {quiz_id} was not found",
+        )
+    
+
+@router.get(
+    "/{quiz_id}/export/xml",
+    status_code=status.HTTP_201_CREATED,
+    responses={404: {"description": "Quiz not found"}},
+)
+async def export_xml(
+    quiz_id: int,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await export_moodle_xml(quiz_id, db)
     except QuizNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
