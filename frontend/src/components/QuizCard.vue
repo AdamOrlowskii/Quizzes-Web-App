@@ -1,23 +1,10 @@
 <script setup>
 import { RouterLink } from 'vue-router'
-import { defineProps, ref, computed } from 'vue'
+import { defineProps } from 'vue'
 
+// eslint-disable-next-line no-unused-vars
 const props = defineProps({
   quiz: Object,
-})
-
-const showFullDescription = ref(false)
-
-const toggleFullDescription = () => {
-  showFullDescription.value = !showFullDescription.value
-}
-
-const truncatedDescription = computed(() => {
-  let description = props.quiz.content
-  if (!showFullDescription.value) {
-    description = description.substring(0, 90) + '...'
-  }
-  return description
 })
 </script>
 
@@ -28,15 +15,7 @@ const truncatedDescription = computed(() => {
         <div class="text-black-900 my-2">Quiz Title: {{ quiz.title }}</div>
       </div>
 
-      <div class="mb-5">
-        <div>{{ truncatedDescription }}</div>
-        <button @click="toggleFullDescription" class="text-purple-500 hover:text-purple-600 mb-5">
-          {{ showFullDescription ? 'Less' : 'More' }}
-        </button>
-      </div>
-
       <h3 class="text-purple-500 mb-2">Published: {{ quiz.published }}</h3>
-
       <div class="border border-gray-100 mb-5"></div>
 
       <div class="flex flex-col lg:flex-row justify-between mb-4">

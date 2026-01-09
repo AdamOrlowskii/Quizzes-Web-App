@@ -1,12 +1,11 @@
 import json
 import tempfile
-from typing import List, Optional
 import xml.etree.ElementTree as ET
+from typing import List, Optional
 from xml.dom import minidom
 
 import pymupdf
 import pymupdf4llm
-from reportlab.lib.pagesizes import letter
 from fastapi import Response, UploadFile
 from fastapi.responses import FileResponse
 from reportlab.lib.pagesizes import letter
@@ -30,7 +29,6 @@ from app.models.quiz_models import Favourite as Favourite_model
 from app.models.quiz_models import Question as Question_model
 from app.models.quiz_models import Quiz as Quiz_model
 from app.models.user_models import User as User_model
-from app.pdf_parser.parser import PDFParser
 from app.schemas.quiz_schemas import FavouriteCreate, QuestionUpdate, QuizCreate
 from app.services.llm_service import send_text_to_llm
 from app.settings.config import settings
@@ -351,46 +349,48 @@ async def export_moodle_xml(quiz_id, db):
     quiz = result.scalar_one_or_none()
     if not quiz:
         raise QuizNotFoundException
-    
+
     questions_result = await db.execute(
         select(Question_model).where(Question_model.quiz_id == quiz_id)
     )
     questions = questions_result.scalars().all()
-    
+
     root = ET.Element("quiz")
-    
+
     for idx, q in enumerate(questions, 1):
-        answers_dict = json.loads(q.answers) if isinstance(q.answers, str) else q.answers
-        
+        answers_dict = (
+            json.loads(q.answers) if isinstance(q.answers, str) else q.answers
+        )
+
         question = ET.SubElement(root, "question", type="multichoice")
-        
+
         name = ET.SubElement(question, "name")
         name_text = ET.SubElement(name, "text")
         name_text.text = f"Question {idx}"
-        
+
         questiontext = ET.SubElement(question, "questiontext", format="html")
         questiontext_text = ET.SubElement(questiontext, "text")
         questiontext_text.text = q.question_text
-        
+
         ET.SubElement(question, "defaultgrade").text = "1"
         ET.SubElement(question, "penalty").text = "0.3333333"
         ET.SubElement(question, "shuffleanswers").text = "true"
         ET.SubElement(question, "single").text = "true"
         ET.SubElement(question, "answernumbering").text = "abc"
-        
+
         for answer_key, answer_text in answers_dict.items():
             is_correct = answer_key == q.correct_answer
             fraction = "100" if is_correct else "0"
-            
+
             answer = ET.SubElement(question, "answer", fraction=fraction, format="html")
             answer_text_elem = ET.SubElement(answer, "text")
             answer_text_elem.text = answer_text
 
-    xml_string = ET.tostring(root, encoding='unicode')
-    
+    xml_string = ET.tostring(root, encoding="unicode")
+
     dom = minidom.parseString(xml_string)
     pretty_xml = dom.toprettyxml(indent="  ", encoding="UTF-8")
-    
+
     return Response(
         content=pretty_xml,
         media_type="application/xml",
@@ -474,9 +474,9 @@ async def export_pdf(quiz_id: int, db: AsyncSession):
     c.line(0.75 * inch, height - 1.5 * inch, width - 0.75 * inch, height - 1.5 * inch)
     y_position = height - 2 * inch
     answer_key = []
-    
-    number_to_letter = {'1': 'A', '2': 'B', '3': 'C', '4': 'D', '5': 'E', '6': 'F'}
-    
+
+    number_to_letter = {"1": "A", "2": "B", "3": "C", "4": "D", "5": "E", "6": "F"}
+
     for idx, q in enumerate(questions, 1):
         if y_position < 2.5 * inch:
             c.showPage()
@@ -489,7 +489,7 @@ async def export_pdf(quiz_id: int, db: AsyncSession):
             y_position -= 0.2 * inch
         c.setFont(FONT_REGULAR, 8)
         answers = json.loads(q.answers) if isinstance(q.answers, str) else q.answers
-        
+
         sorted_keys = sorted(answers.keys())
         for i, key in enumerate(sorted_keys):
             answer_letter = chr(65 + i)
@@ -498,12 +498,12 @@ async def export_pdf(quiz_id: int, db: AsyncSession):
             for line in lines:
                 c.drawString(1.2 * inch, y_position, line)
                 y_position -= 0.2 * inch
-        
+
         correct_num = q.correct_answer
         correct_letter = number_to_letter.get(str(correct_num), correct_num)
         answer_key.append(f"{idx}. {correct_letter}")
         y_position -= 0.1 * inch
-        
+
     c.showPage()
     c.setFont(FONT_BOLD, 10)
     title_width = c.stringWidth("ANSWER KEY", FONT_BOLD, 10)
@@ -530,7 +530,11 @@ async def export_pdf(quiz_id: int, db: AsyncSession):
                 c.showPage()
                 c.setFont(FONT_BOLD, 12)
                 title_width = c.stringWidth("ANSWER KEY (continued)", FONT_BOLD, 12)
-                c.drawString((width - title_width) / 2, height - 1 * inch, "ANSWER KEY (continued)")
+                c.drawString(
+                    (width - title_width) / 2,
+                    height - 1 * inch,
+                    "ANSWER KEY (continued)",
+                )
                 c.setFont(FONT_REGULAR, 8)
                 y_position = height - 1.5 * inch
     c.save()

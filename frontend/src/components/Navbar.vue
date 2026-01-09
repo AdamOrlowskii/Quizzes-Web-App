@@ -55,7 +55,7 @@ window.addEventListener('storage', checkAuth)
                   'text-white px-3 py-2 rounded-md',
                 ]"
               >
-                Administrators Panel
+                Administrator Panel
               </RouterLink>
 
               <RouterLink

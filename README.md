@@ -57,38 +57,42 @@ The aim of this project was to design and develop a web application that enables
 ### Running the Application
 
 1. **Clone the repository**
+
 ```bash
    git clone
-   cd 
+   cd
 ```
 
 2. **Configure environment variables**
+
 ```bash
    cp .env.example .env
    # Edit .env file and set your environment variables
 ```
 
 3. **Build and start all services**
+
 ```bash
    docker-compose up --build
 ```
 
 4. **Create admin account** (in a new terminal)
+
 ```bash
    docker-compose exec backend python -m app.scripts.add_admin
 ```
 
 ### Application URLs
 
-* **Frontend**: [http://localhost:3000](http://localhost:3000)
-* **Backend API**: [http://localhost:7000](http://localhost:7000)
-* **API Documentation (Swagger)**: [http://localhost:7000/docs](http://localhost:7000/docs)
+- **Frontend**: [http://localhost:3000](http://localhost:3000)
+- **Backend API**: [http://localhost:7000](http://localhost:7000)
+- **API Documentation (Swagger)**: [http://localhost:7000/docs](http://localhost:7000/docs)
 
 ### Stopping the Application
+
 ```bash
 docker-compose down
 ```
-
 
 ## Architecture
 
@@ -124,7 +128,6 @@ web_app/
 │   ├── app/
 │   │   ├── exceptions/       # Custom exceptions
 │   │   ├── models.py         # SQLAlchemy models
-│   │   ├── pdf_parser/       # PDF parser
 │   │   ├── routers/          # API endpoints
 │   │   ├── schemas/          # Pydantic schemas
 │   │   ├── scripts/          # Utility scripts

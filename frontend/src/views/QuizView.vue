@@ -231,9 +231,6 @@ onMounted(async () => {
 
               <!-- Questions Preview (if loaded) -->
               <div v-if="state.questions.length > 0" class="mb-6">
-                <h2 class="text-lg font-semibold mb-3 text-gray-700">
-                  Questions ({{ state.questions.length }})
-                </h2>
                 <div class="space-y-3 max-h-140 overflow-y-auto">
                   <div
                     v-for="(question, index) in state.questions.slice(0, 6)"
